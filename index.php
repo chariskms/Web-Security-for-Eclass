@@ -59,11 +59,23 @@ if (!$db) {
 // unset system that records visitor only once by course for statistics
 include('include/action.php');
 if (isset($dbname)) {
-        mysql_select_db($dbname);
+		mysql_select_db($dbname);
+		
         $action = new action();
         $action->record('MODULE_ID_UNITS', 'exit');
 }
+
+try
+{
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword);
+}
+catch (Exception $e)
+{
+  echo "Unable to connect: " . $e->getMessage() ."<p>";
+}
 unset($dbname);
+
+
 
 // second check
 // can we select a database? if not then there is some sort of a problem
@@ -96,9 +108,32 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
 
 	if(!empty($submit)) {
 		unset($uid);
-		$sqlLogin= "SELECT user_id, nom, username, password, prenom, statut, email, perso, lang
-			FROM user WHERE username='".$uname."'";
-		$result = mysql_query($sqlLogin);
+
+		try{
+			// $sqlLogin= $pdodb->prepare("SELECT user_id, nom, username, password, prenom, statut, email, perso, lang
+			// FROM user WHERE username=:user");
+			// // $uname = ".$uname.";
+			// $sqlLogin->bindValue(':user', $uname);
+			// $sqlLogin->execute();
+			// $result = $sqlLogin->fetchAll(PDO::FETCH_ASSOC | PDO::FETCH_COLUMN | PDO::FETCH_GROUP);
+			// $resultString = (string) $result;
+			// echo '<script type="text/javascript">alert("'.$resultString.'");</script>';
+
+
+			$sqlLogin= $pdodb->prepare("SELECT user_id, nom, username, password, prenom, statut, email, perso, lang
+			FROM user WHERE username= ?");
+			// $uname = ".$uname.";
+			$sqlLogin->bindParam(1, $uname);
+			$sqlLogin->execute();
+			// $result = $sqlLogin->fetchAll(PDO::FETCH_LAZY );
+
+			// echo '<script type="text/javascript">alert("'.$result[0][0].'");</script>';
+
+		}
+		catch (Exception $e){
+			echo "Unable: " . $e->getMessage() ."<p>";
+		}
+
 		$check_passwords = array("pop3","imap","ldap","db");
 		$warning = "";
 		$auth_allow = 0;
@@ -110,7 +145,7 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
                         // Disallow login with empty password
 			$auth_allow = 4;
 		} else {
-			while ($myrow = mysql_fetch_array($result)) {
+			while($myrow = $sqlLogin->fetch(PDO::FETCH_ASSOC)) {
 				$exists = 1;
 				if(!empty($auth)) {
 					if(!in_array($myrow["password"],$check_passwords)) {
@@ -120,7 +155,8 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
 						// alternate methods login
 						include "include/alt_login.php";
 					}
-				} else {
+				} 
+				else {
 					$tool_content .= "<br>$langInvalidAuth<br>";
 				}
 			}
