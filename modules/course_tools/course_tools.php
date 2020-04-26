@@ -255,7 +255,7 @@ if ($is_adminOfCourse){
 				if($mID<101) $mID = 101;
 				else $mID = $mID+1;
 				$link = quote($link);
-				$name_link = quote($name_link);
+				$name_link = quote(q($name_link));
 				mysql_query("INSERT INTO accueil VALUES ($mID,
 							$name_link,
 							$link,
