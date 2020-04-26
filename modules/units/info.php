@@ -86,16 +86,21 @@ if (isset($_GET['edit'])) { // display form for editing course unit
         $cu = mysql_fetch_array($sql);
         $unittitle = " value='" . htmlspecialchars($cu['title'], ENT_QUOTES) . "'";
         $unitdescr = $cu['comments'];
+
+        $unitdescr = str_replace("&lt;p&gt;", "<p>", $unitdescr);
+        $unitdescr = str_replace("&lt;/p&gt;", "</p>", $unitdescr); 
+        $unitdescr = str_replace("&lt;br /&gt;", "<br />", $unitdescr);
+        $descr = str_ireplace(array("\r","\n",'\r','\n'),'', $descr);
+
         $unit_id = $cu['id'];
         $button = $langEdit;
-        
+
 } else {
         $nameTools = $langAddUnit;
         $button = $langAdd;
         $unitdescr = $unittitle = '';
 }
-$unittitle = q($unittitle);
-$unitdescr = q($unitdescr);
+
 $tool_content .= "<form method='post' action='${urlServer}courses/$currentCourseID/'
         onsubmit=\"return checkrequired(this, 'unittitle');\">";
 if (isset($unit_id)) {
@@ -110,6 +115,7 @@ $tool_content .= "<table width='99%' class='FormData' align='center'><tbody>
         <table class='xinha_editor'><tr><td><textarea id='xinha' name='unitdescr'>". str_replace('{','&#123;',htmlspecialchars($unitdescr))."</textarea></td></tr>
         </table></td></tr>
         <tr><th>&nbsp;</th>
+	    
             <td><input type='submit' name='edit_submit' value='$button'></td></tr>
 </tbody></table>
 </form>";
