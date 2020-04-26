@@ -88,12 +88,14 @@ if (isset($_GET['edit'])) { // display form for editing course unit
         $unitdescr = $cu['comments'];
         $unit_id = $cu['id'];
         $button = $langEdit;
+        
 } else {
         $nameTools = $langAddUnit;
         $button = $langAdd;
         $unitdescr = $unittitle = '';
 }
-
+$unittitle = q($unittitle);
+$unitdescr = q($unitdescr);
 $tool_content .= "<form method='post' action='${urlServer}courses/$currentCourseID/'
         onsubmit=\"return checkrequired(this, 'unittitle');\">";
 if (isset($unit_id)) {
