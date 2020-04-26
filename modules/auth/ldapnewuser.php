@@ -48,7 +48,7 @@ $tool_content = "";
 
 // for security
 $auth = isset($_GET['auth'])?intval($_GET['auth']):0;
-
+$auth = q($auth);
 if (isset($_GET['auth']) or isset($_POST['auth']))
 	$_SESSION['u_tmp']=$auth;
 if(!isset($_GET['auth']) or !isset($_POST['auth']))
@@ -73,11 +73,11 @@ if (isset($p) and ($p)) {
 	<thead>
 	<tr>
 	<th class='left' width='220'>$langAuthUserName</th>
-	<td><input type='text' name='ldap_email' value='$ldap_email' class='FormData_InputText'></td>
+	<td><input type='text' name='ldap_email' value='".q($ldap_email)."' class='FormData_InputText'></td>
 	</tr>
 	<tr>
 	<th class='left'>$langAuthPassword</th>
-	<td><input type='password' name='ldap_passwd' value='$ldap_passwd' class='FormData_InputText'></td>
+	<td><input type='password' name='ldap_passwd' value='".q($ldap_passwd)."' class='FormData_InputText'></td>
 	</tr>
 	<tr><th>&nbsp;</th>
 	<td>
