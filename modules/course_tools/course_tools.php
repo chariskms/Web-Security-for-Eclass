@@ -281,6 +281,12 @@ if ($is_adminOfCourse){
 				$size = "20971520"; //file size is 20M (1024x1024x20)
 				if (isset($file_name) and ($file_name != "") && ($file_size <= "$size") and ($link_name != "")) {
 
+					include '../../include/lib/forcedownload.php';
+					$ext = get_file_extension($file_name);
+					if($ext != 'html'){
+						exit;
+					}
+
 					@copy("$file", "$updir/$file_name")
 						or die("<p>$langCouldNot</p></tr>");
 
