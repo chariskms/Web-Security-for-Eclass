@@ -111,17 +111,19 @@ list($maxorder) = mysql_fetch_row($result);
 // other actions in course unit
 if ($is_adminOfCourse) {
         if (isset($_REQUEST['edit_submit'])) {
-                $title = autoquote(escapeSimple($_REQUEST['unittitle']));
-                $descr = autoquote(escapeSimple($_REQUEST['unitdescr']));
+                $title = autoquote(q(escapeSimple($_REQUEST['unittitle'])));
+                $descr = autoquote(q(escapeSimple($_REQUEST['unitdescr'])));
                 if (isset($_REQUEST['unit_id'])) { // update course unit
                         $unit_id = intval($_REQUEST['unit_id']);
-                        
+        
                         $cours_id = escapeSimple($cours_id);
                         $unit_id = htmlspecialchars($unit_id, ENT_QUOTES);
-                        $title = htmlspecialchars($title, ENT_QUOTES);
-                        $descr = htmlspecialchars($descr, ENT_QUOTES);
                         $cours_id = htmlspecialchars($cours_id, ENT_QUOTES);
                         
+                        $descr = str_replace("&lt;p&gt;", "<p>", $descr);
+                        $descr = str_replace("&lt;/p&gt;", "</p>", $descr); 
+                        $descr = str_replace("&lt;br /&gt;", "<br />", $descr);
+                        $descr = str_ireplace(array("\r","\n",'\r','\n'),'', $descr);
 
                         $result = db_query("UPDATE course_units SET
                                                    title = $title,
@@ -131,6 +133,11 @@ if ($is_adminOfCourse) {
                 } else { // add new course unit
                         $order = $maxorder + 1;
                         $cours_id = escapeSimple($cours_id);
+
+                        $descr = str_replace("&lt;p&gt;", "<p>", $descr);
+                        $descr = str_replace("&lt;/p&gt;", "</p>", $descr); 
+                        $descr = str_replace("&lt;br /&gt;", "<br />", $descr);
+                        $descr = str_ireplace(array("\r","\n",'\r','\n'),'', $descr);
 
                         db_query("INSERT INTO course_units SET
                                          title = $title, comments =  $descr,
