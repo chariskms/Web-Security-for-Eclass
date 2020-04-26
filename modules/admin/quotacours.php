@@ -78,25 +78,29 @@ if (isset($search) && ($search=="yes")) {
 	$searchurl = "&search=yes";
 }
 // Update course quota
-if (isset($submit))  {
-	$dq = $dq * 1000000;
+if (isset($submit)){
+  
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){    
+  		$dq = $dq * 1000000;
         $vq = $vq * 1000000;
-        $gq = $gq * 1000000;
+    	$gq = $gq * 1000000;
         $drq = $drq * 1000000;
-  // Update query
-	$sql = mysql_query("UPDATE cours SET doc_quota='$dq',video_quota='$vq',group_quota='$gq',dropbox_quota='$drq' 			WHERE code='".mysql_real_escape_string($_GET['c'])."'");
-	// Some changes occured
-	if (mysql_affected_rows() > 0) {
+		// Update query
+		$sql = mysql_query("UPDATE cours SET doc_quota='$dq',video_quota='$vq',group_quota='$gq',dropbox_quota='$drq' 			WHERE code='".mysql_real_escape_string($_GET['c'])."'");
+		// Some changes occured
+		if (mysql_affected_rows() > 0) {
 		$tool_content .= "<p>".$langQuotaSuccess."</p>";
-	}
-	// Nothing updated
-	else {
+		}
+		// Nothing updated
+		else {
 		$tool_content .= "<p>".$langQuotaFail."</p>";
+		}
 	}
-
 }
 // Display edit form for course quota
 else {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+
 	// Get course information
 	$q = mysql_fetch_array(mysql_query("SELECT code,intitule,doc_quota,video_quota,group_quota,dropbox_quota
 			FROM cours WHERE code='".mysql_real_escape_string($_GET['c'])."'"));
@@ -136,7 +140,8 @@ else {
   </tr>
   <input type='hidden' name='c' value='".htmlspecialchars($_GET['c'])."'>
   <tr>
-    <th>&nbsp;</th>
+	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
     <td><input type='submit' name='submit' value='$langModify'></td>
   </tr>
   </tbody>

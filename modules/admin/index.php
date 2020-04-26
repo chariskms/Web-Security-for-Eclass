@@ -95,6 +95,7 @@ if ($count_prof_requests > 0) {
     $prof_request_msg = $langNoOpenRequests;
 }
 
+
 // Find last course created
 $sql = "SELECT code, intitule, titulaires FROM cours ORDER BY cours_id DESC LIMIT 0,1";
 $result = mysql_query($sql);
@@ -114,12 +115,14 @@ $myrow = mysql_fetch_array($result);
 $last_stud_info = "<b>".$myrow['prenom']." ".$myrow['nom']."</b> (".$myrow['email'].", ".date("j/n/Y H:i",$myrow['registered_at']).")";
 
 // Find admin's last login
+$uid = escapeSimple($uid);
 $sql = "SELECT `when` FROM loginout WHERE id_user = '".$uid."' AND action = 'LOGIN' ORDER BY `when` DESC LIMIT 1,1";
 $result = mysql_query($sql);
 $myrow = mysql_fetch_array($result);
 $lastadminlogin = strtotime($myrow['when']!=""?$myrow['when']:0);
 
 // Count profs registered after last login
+
 $sql = "SELECT COUNT(*) AS cnt FROM user WHERE statut = 1 AND registered_at > '".$lastadminlogin."'";
 $result = mysql_query($sql);
 $myrow = mysql_fetch_array($result);

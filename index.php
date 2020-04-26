@@ -67,7 +67,7 @@ if (isset($dbname)) {
 
 try
 {
-	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword);
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
 }
 catch (Exception $e)
 {
@@ -123,8 +123,13 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
 			$sqlLogin= $pdodb->prepare("SELECT user_id, nom, username, password, prenom, statut, email, perso, lang
 			FROM user WHERE username= ?");
 			// $uname = ".$uname.";
+
+			
+
+
 			$sqlLogin->bindParam(1, $uname);
 			$sqlLogin->execute();
+
 			// $result = $sqlLogin->fetchAll(PDO::FETCH_LAZY );
 
 			// echo '<script type="text/javascript">alert("'.$result[0][0].'");</script>';
@@ -138,12 +143,12 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
 		$warning = "";
 		$auth_allow = 0;
 		$exists = 0;
-                if (!isset($_COOKIE) or count($_COOKIE) == 0) {
-                        // Disallow login when cookies are disabled
-                        $auth_allow = 5;
-                } elseif (empty($pass)) {
-                        // Disallow login with empty password
-			$auth_allow = 4;
+		if (!isset($_COOKIE) or count($_COOKIE) == 0) {
+				// Disallow login when cookies are disabled
+				$auth_allow = 5;
+		} elseif (empty($pass)) {
+				// Disallow login with empty password
+		$auth_allow = 4;
 		} else {
 			while($myrow = $sqlLogin->fetch(PDO::FETCH_ASSOC)) {
 				$exists = 1;
@@ -188,6 +193,8 @@ if (isset($_SESSION['shib_uname'])) { // authenticate via shibboleth
 			$_SESSION['statut'] = $statut;
 			$_SESSION['is_admin'] = $is_admin;
 			$_SESSION['uid'] = $uid;
+
+			$uid = escapeSimple($uid);
 			mysql_query("INSERT INTO loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
 			VALUES ('', '$uid', '$_SERVER[REMOTE_ADDR]', NOW(), 'LOGIN')");
 		}
@@ -209,7 +216,10 @@ if (isset($_SESSION['uid'])) {
 }
 // if the user logged in include the correct language files
 // in case he has a different language set in his/her profile
-if (isset($language)) {
+
+$allowedPages = array('english', 'greek', 'spanish');
+
+if (isset($language) && isset($webDir) && in_array($language, $allowedPages)) {
         // include_messages
         include("${webDir}modules/lang/$language/common.inc.php");
         $extra_messages = "${webDir}/config/$language.inc.php";
@@ -224,8 +234,13 @@ if (isset($language)) {
         }
 
 }
+else{
+	http_response_code(404);
+	die();
+}
 $nameTools = $langWelcomeToEclass;
-	
+
+
 //----------------------------------------------------------------
 // if login succesful display courses lists
 // --------------------------------------------------------------
@@ -239,6 +254,7 @@ if (isset($uid) AND !isset($logout)) {
 			include "include/logged_in_content.php";
 			draw($tool_content,1,null,null,null,null,$perso_tool_content);
 		} else {
+			$uid = escapeSimple($uid);
 			//if the user is a guest send him straight to the corresponding lesson
 			$guestSQL = db_query("SELECT code FROM cours_user, cours
 				              WHERE cours.cours_id = cours_user.cours_id AND
@@ -266,6 +282,13 @@ if (isset($uid) AND !isset($logout)) {
 // -------------------------------------------------------------------------------------
 elseif ((isset($logout) && isset($uid)) OR (1==1)) {
 	if (isset($logout) && isset($uid)) {
+		//echo '<script type="text/javascript">alert("'.$REMOTE_ADDR.'");</script>';
+		// $REMOTE_ADDR = "http://192.168.0.107";
+		// if(!filter_var($REMOTE_ADDR, FILTER_VALIDATE_IP)){
+		// 	exit;
+		// }
+
+		$uid = escapeSimple($uid);
 		mysql_query("INSERT INTO loginout (loginout.idLog, loginout.id_user,
 			loginout.ip, loginout.when, loginout.action)
 			VALUES ('', '$uid', '$REMOTE_ADDR', NOW(), 'LOGOUT')");

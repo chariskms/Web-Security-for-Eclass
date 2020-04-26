@@ -478,8 +478,8 @@ function checkConnectivityToRepo($bcmsrepo) {
 		if (substr_count($contents, "HTTP Status 404") > 0)
 			return false;
 
-			
-		@include_once($url);
+		if(isset($url))	
+			@include_once($url);
 		if (!class_exists("Java"))
 			return false;
 			

@@ -49,81 +49,106 @@ $all_set = register_posted_variables(array(
 
 $submit = isset($_POST['submit'])?$_POST['submit']:'';
 
+
 if($submit) {
-	// register user
-	$depid = intval(isset($_POST['department'])?$_POST['department']: 0);
-	$proflanguage = isset($_POST['language'])?$_POST['language']:'';
-	if (!isset($native_language_names[$proflanguage])) {
-		$proflanguage = langname_to_code($language);
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		// register user
+		$depid = intval(isset($_POST['department'])?$_POST['department']: 0);
+		$proflanguage = isset($_POST['language'])?$_POST['language']:'';
+		if (!isset($native_language_names[$proflanguage])) {
+			$proflanguage = langname_to_code($language);
+		}
+
+		$mysqlMainDb = escapeSimple($mysqlMainDb);
+		$uname = escapeSimple($uname);
+
+		// check if user name exists
+		$username_check = mysql_query("SELECT username FROM `$mysqlMainDb`.user 
+				WHERE username=".autoquote($uname));
+		$user_exist = (mysql_num_rows($username_check) > 0);
+
+		// check if there are empty fields
+		if (!$all_set) {
+			$tool_content .= "<p class='caution_small'>$langEmptyFields</p>
+				<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
+		} elseif ($user_exist) {
+			$tool_content .= "<p class='caution_small'>$langUserFree</p>
+				<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
+		} elseif(!email_seems_valid($email_form)) {
+			$tool_content .= "<p class='caution_small'>$langEmailWrong.</p>
+				<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
+		} else {
+					$registered_at = time();
+			$expires_at = time() + $durationAccount;
+			$password_encrypted = md5($password);
+
+			$prenom_form = htmlspecialchars($prenom_form, ENT_QUOTES);
+			$nom_form = htmlspecialchars($nom_form, ENT_QUOTES);
+			$uname = htmlspecialchars($uname, ENT_QUOTES);
+			$email_form = htmlspecialchars($email_form, ENT_QUOTES);
+			$pstatut = htmlspecialchars($pstatut, ENT_QUOTES);
+			$depid = htmlspecialchars($depid, ENT_QUOTES);
+			$comment = htmlspecialchars($comment, ENT_QUOTES);
+			$password = htmlspecialchars($password, ENT_QUOTES);
+
+
+			$mysqlMainDb = escapeSimple($mysqlMainDb);
+			$pstatut = escapeSimple($pstatut);
+			$depid = escapeSimple($depid);
+			$registered_at = escapeSimple($registered_at);
+			$expires_at = escapeSimple($expires_at);
+			$proflanguage = escapeSimple($proflanguage);
+
+			$inscr_user = db_query("INSERT INTO `$mysqlMainDb`.user
+					(nom, prenom, username, password, email, statut, department, am, registered_at, expires_at,lang)
+					VALUES (" .
+					autoquote(escapeSimple($nom_form)) . ', ' .
+					autoquote(escapeSimple($prenom_form)) . ', ' .
+					autoquote(escapeSimple($uname)) . ", '$password_encrypted', " .
+					autoquote(escapeSimple($email_form)) .
+					", $pstatut, $depid, " . autoquote(escapeSimple($comment)) . ", $registered_at, $expires_at, '$proflanguage')");
+
+			// close request
+			$rid = intval($_POST['rid']);
+			db_query("UPDATE prof_request set status = 2, date_closed = NOW() WHERE rid = '$rid'");
+
+					if ($pstatut == 1) {
+							$message = $profsuccess;
+							$reqtype = '';
+							$type_message = $langAsProf;
+					} else {
+							$message = $usersuccess;
+							$reqtype = '?type=user';
+							$type_message = '';
+							// $langAsUser;
+					}
+				$tool_content .= "<p class='success_small'>$message</p><br><br><p align='right'><a href='../admin/listreq.php$reqtype'>$langBackRequests</a></p>";
+			
+			// send email
+			
+					$emailsubject = "$langYourReg $siteName $type_message";
+					$emailbody = "
+	$langDestination $prenom_form $nom_form
+
+	$langYouAreReg $siteName $type_message, $langSettings $uname
+	$langPass : $password
+	$langAddress $siteName $langIs: $urlServer
+	$langProblem
+
+	$administratorName $administratorSurname
+	$langManager $siteName
+	$langTel $telephone
+	$langEmail : $emailhelpdesk
+	";
+			
+			send_mail('', '', '', $email_form, $emailsubject, $emailbody, $charset);
+
+		}
 	}
-
-	// check if user name exists
-	$username_check = mysql_query("SELECT username FROM `$mysqlMainDb`.user 
-			WHERE username=".autoquote($uname));
-	$user_exist = (mysql_num_rows($username_check) > 0);
-
-	// check if there are empty fields
-	if (!$all_set) {
-		$tool_content .= "<p class='caution_small'>$langEmptyFields</p>
-			<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
-	} elseif ($user_exist) {
-		$tool_content .= "<p class='caution_small'>$langUserFree</p>
-			<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
-	} elseif(!email_seems_valid($email_form)) {
-		$tool_content .= "<p class='caution_small'>$langEmailWrong.</p>
-			<br><br><p align='right'><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p>";
-	} else {
-                $registered_at = time();
-		$expires_at = time() + $durationAccount;
-		$password_encrypted = md5($password);
-		$inscr_user = db_query("INSERT INTO `$mysqlMainDb`.user
-				(nom, prenom, username, password, email, statut, department, am, registered_at, expires_at,lang)
-				VALUES (" .
-				autoquote($nom_form) . ', ' .
-				autoquote($prenom_form) . ', ' .
-				autoquote($uname) . ", '$password_encrypted', " .
-				autoquote($email_form) .
-				", $pstatut, $depid, " . autoquote($comment) . ", $registered_at, $expires_at, '$proflanguage')");
-
-		// close request
-	  	$rid = intval($_POST['rid']);
-  	  	db_query("UPDATE prof_request set status = 2, date_closed = NOW() WHERE rid = '$rid'");
-
-                if ($pstatut == 1) {
-                        $message = $profsuccess;
-                        $reqtype = '';
-                        $type_message = $langAsProf;
-                } else {
-                        $message = $usersuccess;
-                        $reqtype = '?type=user';
-                        $type_message = '';
-                        // $langAsUser;
-                }
-	       	$tool_content .= "<p class='success_small'>$message</p><br><br><p align='right'><a href='../admin/listreq.php$reqtype'>$langBackRequests</a></p>";
-		
-		// send email
-		
-                $emailsubject = "$langYourReg $siteName $type_message";
-                $emailbody = "
-$langDestination $prenom_form $nom_form
-
-$langYouAreReg $siteName $type_message, $langSettings $uname
-$langPass : $password
-$langAddress $siteName $langIs: $urlServer
-$langProblem
-
-$administratorName $administratorSurname
-$langManager $siteName
-$langTel $telephone
-$langEmail : $emailhelpdesk
-";
-		
-		send_mail('', '', '', $email_form, $emailsubject, $emailbody, $charset);
-
-        }
-
+	
 } else {
-        $lang = false;
+	$lang = false;
+	$id = escapeSimple($id);
 	if (isset($id)) { // if we come from prof request
 		$res = mysql_fetch_array(db_query("SELECT profname, profsurname, profuname, profemail, proftmima, comment, lang, statut 
 			FROM prof_request WHERE rid='$id'"));
@@ -134,21 +159,21 @@ $langEmail : $emailhelpdesk
 		$pt = $res['proftmima'];
 		$pcom = $res['comment'];
 		$lang = $res['lang'];
-                $pstatut = $res['statut'];
+				$pstatut = $res['statut'];
 	} elseif (@$_GET['type'] == 'user') {
-                $pstatut = 5;
-        } else {
-                $pstatut = 1;
-        }
+				$pstatut = 5;
+		} else {
+				$pstatut = 1;
+		}
 
-        if ($pstatut == 5) {
-                $nameTools = $langUserDetails;
-                $title = $langInsertUserInfo;
-        } else {
-                $nameTools = $langProfReg;
-                $title = $langNewProf;
-        }
-
+		if ($pstatut == 5) {
+				$nameTools = $langUserDetails;
+				$title = $langInsertUserInfo;
+		} else {
+				$nameTools = $langProfReg;
+				$title = $langNewProf;
+		}
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "<form action='$_SERVER[PHP_SELF]' method='post'>
 	<table width='99%' align='left' class='FormData'>
 	<tbody><tr>
@@ -202,6 +227,7 @@ $langEmail : $emailhelpdesk
 	$tool_content .= "</td></tr>
 	<tr>
 	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td><input type='submit' name='submit' value='$langSubmit' >
 		<small>$langRequiredFields</small></td>
 	</tr>
@@ -209,7 +235,7 @@ $langEmail : $emailhelpdesk
 	</table>
 	<input type='hidden' name='rid' value='".@$id."'>
 	<input type='hidden' name='pstatut' value='$pstatut'>
-        <input type='hidden' name='auth' value='1' >
+		<input type='hidden' name='auth' value='1' >
 	</form>";
 	$tool_content .= "
 	<br />

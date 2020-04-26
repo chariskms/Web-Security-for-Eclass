@@ -95,7 +95,7 @@
 		}
 		catch (e)
 		{
-//			alert("Swekey_ListKeyIds " + e);
+//			Swekey_ListKeyIds " + e);
 		}
 		return "";
 	}
@@ -132,7 +132,7 @@
 		}
 		catch (e)
 		{
-//			alert("Swekey_GetSOtp " + e);
+//			Swekey_GetSOtp " + e);
 		}
 		return "";
 	}

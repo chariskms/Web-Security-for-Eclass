@@ -142,15 +142,49 @@ if ($total_topics > $topics_per_page) { // navigation
 	$tool_content .= "</td></tr></table>";
 }
 
+$uid = escapeSimple($uid);
+$topic_id = escapeSimple($topic_id);
+$cours_id = escapeSimple($cours_id);
+
+$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+
 if(isset($topicnotify)) { // modify topic notification
+
 	$rows = mysql_num_rows(db_query("SELECT * FROM forum_notify 
 		WHERE user_id = $uid AND topic_id = $topic_id AND course_id = $cours_id", $mysqlMainDb));
+
+
+
 	if ($rows > 0) {
-		db_query("UPDATE forum_notify SET notify_sent = '$topicnotify' 
-			WHERE user_id = $uid AND topic_id = $topic_id AND course_id = $cours_id", $mysqlMainDb);
+		$sql = $pdodb -> prepare("UPDATE forum_notify SET notify_sent = ?
+		WHERE user_id = ? AND topic_id = ? AND course_id = ?");
+
+		$sql -> bindParam(1, $topicnotify);
+		$sql -> bindParam(2, $uid);
+		$sql -> bindParam(3, $topic_id);
+		$sql -> bindParam(4, $cours_id);
+
+		$sql -> execute();
+
+		// db_query("UPDATE forum_notify SET notify_sent = '$topicnotify' 
+		// 	WHERE user_id = $uid AND topic_id = $topic_id AND course_id = $cours_id", $mysqlMainDb);
+	
+
 	} else {
-		db_query("INSERT INTO forum_notify SET user_id = $uid,
-		topic_id = $topic_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
+		$sql = $pdodb -> prepare("INSERT INTO forum_notify SET user_id = ?,
+		topic_id = ?, notify_sent = ?, course_id = ?");
+
+		$one = 1;
+		$sql -> bindParam(1, $uid);
+		$sql -> bindParam(2, $topic_id);
+		$sql -> bindParam(3, $one);
+		$sql -> bindParam(4, $cours_id);
+
+		$sql -> execute();
+
+
+		// db_query("INSERT INTO forum_notify SET user_id = $uid,
+		// topic_id = $topic_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
 	}
 }
 
@@ -163,6 +197,12 @@ $tool_content .= "<table width='99%' class='ForumSum'><thead><tr>
 <td class='ForumHead' width='100'>$langLastMsg</td>
 <td class='ForumHead' width='20'>$langNotifyActions</td>
 </tr></thead><tbody>";
+
+$forum = intval($forum);
+
+$first_topic = escapeSimple($first_topic);
+$topics_per_page = escapeSimple($topics_per_page);
+
 
 $sql = "SELECT t.*, p.post_time, p.nom AS nom1, p.prenom AS prenom1
         FROM topics t
@@ -237,8 +277,17 @@ if (mysql_num_rows($result) > 0) { // topics found
 		$tool_content .= "<td class='Forum_leftside1'>$myrow[prenom] $myrow[nom]</td>\n";
 		$tool_content .= "<td class='Forum_leftside'>$myrow[topic_views]</td>\n";
 		$tool_content .= "<td class='Forum_leftside1'>$myrow[prenom1] $myrow[nom1]<br />$last_post</td>";
+
+
+		$uid = intval($uid);
+
+		$topic_id = escapeSimple($myrow[topic_id]);
+		$cours_id = escapeSimple($cours_id);
+		
 		list($topic_action_notify) = mysql_fetch_row(db_query("SELECT notify_sent FROM forum_notify 
-			WHERE user_id = $uid AND topic_id = $myrow[topic_id] AND course_id = $cours_id", $mysqlMainDb));
+			WHERE user_id = $uid AND topic_id = $topic_id AND course_id = $cours_id", $mysqlMainDb));
+		
+		
 		if (!isset($topic_action_notify)) {
 			$topic_link_notify = FALSE;
 			$topic_icon = '_off';

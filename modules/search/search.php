@@ -41,7 +41,16 @@ search.php
 //*/
 
 include '../../include/baseTheme.php';
+
+
+
 if(isset($_POST['search_terms'])) {
+	$search_terms = htmlspecialchars($search_terms, ENT_QUOTES);
+	// if(!ctype_alnum(str_replace(' ', '', $_POST['search_terms']))){
+	// 	$error = TRUE;
+	// 	echo ($langErrors = "ERROR");
+	// 	die();
+	// }
 	$search_terms_title = $search_terms_keywords = $search_terms_instructor = $search_terms_coursecode = $_POST['search_terms'];
 }
 //elegxos ean o xrhsths vrisketai sthn kentrikh selida tou systhmatos xwris na exei kanei login

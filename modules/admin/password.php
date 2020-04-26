@@ -54,6 +54,7 @@ if (!isset($urlSecure)) {
 }
 
 if (!isset($changePass)) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "
 <form method=\"post\" action=\"$passurl?submit=yes&changePass=do&userid=$userid\">
   <table class=\"FormData\" width=\"99%\" align=\"left\">
@@ -71,7 +72,8 @@ if (!isset($changePass)) {
     <td><input type=\"password\" size=\"40\" name=\"password_form1\" value=\"\"></td>
   </tr>
   <tr>
-    <th class=\"left\">&nbsp;</th>
+	<th class=\"left\">&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
     <td><input type=\"submit\" name=\"submit\" value=\"$langModify\"></td>
   </tr>
   </tbody>
@@ -80,28 +82,33 @@ if (!isset($changePass)) {
 }
 
 elseif (isset($submit) && isset($changePass) && ($changePass == "do")) {
-	$userid = $_REQUEST['userid'];
-	if (empty($_REQUEST['password_form']) || empty($_REQUEST['password_form1'])) {
-		$tool_content .= mes($langFields, "", 'caution');
+
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		$userid = $_REQUEST['userid'];
+		if (empty($_REQUEST['password_form']) || empty($_REQUEST['password_form1'])) {
+			$tool_content .= mes($langFields, "", 'caution');
+			draw($tool_content, 3);
+			exit();
+		}
+		if ($_REQUEST['password_form1'] !== $_REQUEST['password_form']) {
+			$tool_content .= mes($langPassTwo, "", 'caution_small');
+			draw($tool_content, 3);
+			exit();
+		}
+		//all checks ok. Change password!
+		$userid = escapeSimple($userid);
+
+		$sql = "SELECT `password` FROM `user` WHERE `user_id`='$userid'";
+		$result = db_query($sql, $mysqlMainDb);
+		$myrow = mysql_fetch_array($result);
+		$old_pass_db = $myrow['password'];
+		$new_pass = md5(escapeSimple($_REQUEST['password_form']));
+		$sql = "UPDATE `user` SET `password` = '$new_pass' WHERE `user_id` = '$userid'";
+		db_query($sql, $mysqlMainDb);
+		$tool_content .= mes($langPassChanged, $langHome, 'success_small');
 		draw($tool_content, 3);
 		exit();
 	}
-	if ($_REQUEST['password_form1'] !== $_REQUEST['password_form']) {
-		$tool_content .= mes($langPassTwo, "", 'caution_small');
-		draw($tool_content, 3);
-		exit();
-	}
-	//all checks ok. Change password!
-	$sql = "SELECT `password` FROM `user` WHERE `user_id`='$userid'";
-	$result = db_query($sql, $mysqlMainDb);
-	$myrow = mysql_fetch_array($result);
-	$old_pass_db = $myrow['password'];
-	$new_pass = md5($_REQUEST['password_form']);
-	$sql = "UPDATE `user` SET `password` = '$new_pass' WHERE `user_id` = '$userid'";
-	db_query($sql, $mysqlMainDb);
-	$tool_content .= mes($langPassChanged, $langHome, 'success_small');
-	draw($tool_content, 3);
-	exit();
 }
 
 draw($tool_content, 3);

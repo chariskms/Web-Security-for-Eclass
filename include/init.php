@@ -78,7 +78,7 @@ if (isset($_REQUEST['localize'])) {
 $active_ui_languages = array('el', 'en', 'es');
 
 // Get configuration variables
-if (!isset($webDir)) {
+if (!isset($webDir) && isset($relPath)) {
 	//path for course_home
 	@include($relPath . "config/config.php");
 	if (!isset($webDir)) {
@@ -113,16 +113,28 @@ if (mysql_version()) mysql_query("SET NAMES utf8");
 mysql_select_db($mysqlMainDb, $db);
 
 // include_messages
-include("${webDir}modules/lang/$language/common.inc.php");
-$extra_messages = "${webDir}/config/$language.inc.php";
-if (file_exists($extra_messages)) {
-        include $extra_messages;
-} else {
-        $extra_messages = false;
+if(!strcmp($language, "greek") && !strcmp($language, "english") && !strcmp($language, "spanish")){
+	$language = "greek";
 }
-include("${webDir}modules/lang/$language/messages.inc.php");
-if ($extra_messages) {
-        include $extra_messages;
+
+$allowedPages = array('english', 'greek', 'spanish');
+
+if (isset($language) && isset($webDir) && in_array($language, $allowedPages)) {
+	include("${webDir}modules/lang/$language/common.inc.php");
+	$extra_messages = "${webDir}/config/$language.inc.php";
+	if (file_exists($extra_messages)) {
+			include $extra_messages;
+	} else {
+			$extra_messages = false;
+	}
+	include("${webDir}modules/lang/$language/messages.inc.php");
+	if ($extra_messages) {
+			include $extra_messages;
+	}
+}
+else{
+	http_response_code(404);
+	die();
 }
 
 // Make sure that the $uid variable isn't faked
@@ -242,6 +254,10 @@ if (isset($require_current_course) and $require_current_course) {
 		// If course language is different from global language,
 		// include more messages
                 if ($language != $languageInterface) {
+						if(strcmp($language, "greek") && strcmp($language, "english") && strcmp($language, "spanish")){
+							http_response_code(404);
+							die();
+						}
                         $language = $languageInterface;
                         // include_messages
                         include("${webDir}modules/lang/$language/common.inc.php");

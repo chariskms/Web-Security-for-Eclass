@@ -68,6 +68,7 @@ function PMA_generate_common_hidden_inputs($db = '', $table = '', $indent = 0, $
     }
 
     $params['token'] = $_SESSION[' PMA_token '];
+    //echo '<script type="text/javascript">alert("'.$_SESSION['PMA_token'].'");</script>';
 
     if (! is_array($skip)) {
         if (isset($params[$skip])) {

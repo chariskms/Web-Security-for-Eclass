@@ -50,7 +50,7 @@ if (isset($_GET['u']) or isset($_POST['u']))
 $_SESSION['u_tmp']=$u;
 if(!isset($_GET['u']) or !isset($_POST['u']))
 $u=$_SESSION['u_tmp'];
-
+$u = htmlspecialchars($u, ENT_QUOTES);
 $tool_content = $head_content = "";
 
 $lang_editor = $lang_jscalendar = langname_to_code($language);
@@ -110,6 +110,8 @@ if(!in_array($info['password'], $authmethods)) {
 	}
   else    // means that it is external auth method, so the user cannot change this password
   {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+
     switch($info['password'])
     {
       case "pop3": $auth=2;break;
@@ -204,7 +206,8 @@ $tool_content .= "
     <td>
       <input type='hidden' name='u' value='$u' />
       <input type='hidden' name='u_submitted' value='1' />
-      <input type='hidden' name='registered_at' value='".$info['registered_at']."' />
+	  <input type='hidden' name='registered_at' value='".$info['registered_at']."' />
+	  <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
       <input type='submit' name='submit_edituser' value='$langModify' />
     </td>
   </tr>
@@ -286,74 +289,92 @@ $tool_content .= "
 				$tool_content .= $langCannotDeleteAdmin;
 			}
 		}
-	}  else { // if the form was submitted then update user
+	}else{ // if the form was submitted then update user
+		if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
 
-		// get the variables from the form and initialize them
-		$fname = isset($_POST['fname'])?$_POST['fname']:'';
-		$lname = isset($_POST['lname'])?$_POST['lname']:'';
-
-		// trim white spaces in the end and in the beginning of the word
-		$username = preg_replace('/\ +/', ' ', trim(isset($_POST['username'])?$_POST['username']:''));
-		$email = isset($_POST['email'])?$_POST['email']:'';
-		$phone = isset($_POST['phone'])?$_POST['phone']:'';
-		$am = isset($_POST['am'])?$_POST['am']:'';
-		$department = isset($_POST['department'])?$_POST['department']:'NULL';
-		$newstatut = isset($_POST['newstatut'])?$_POST['newstatut']:'NULL';
-		$registered_at = isset($_POST['registered_at'])?$_POST['registered_at']:'';
-		$date = isset($_POST['date'])?$_POST['date']:'';
-		$hour = isset($_POST['hour'])?$_POST['hour']:'';
-		$minute = isset($_POST['minute'])?$_POST['minute']:'';
-		$date = explode("-",  $date);
-    		$day=$date[0];
-    		$year=$date[2];
-    		$month=$date[1];
-		$expires_at = mktime($hour, $minute, 0, $month, $day, $year);
-		$user_exist= FALSE;
-		// check if username is free
-  		$username_check=mysql_query("SELECT username FROM user WHERE username='".escapeSimple($username)."'");
-		$nums = mysql_num_rows($username_check);
-
-if (mysql_num_rows($username_check) > 1) {
-		    $user_exist = TRUE;
-	  }
-
-  // check if there are empty fields
-  if (empty($fname) OR empty($lname) OR empty($username)) {
-	$tool_content .= "<table width='99%'><tbody><tr>
-        <td class='caution' height='60'><p>$langEmptyFields</p>
-	<p><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p></td></tr></tbody></table><br /><br />";
-	draw($tool_content, 3, ' ', $head_content);
-	    exit();
-	}
- 	 elseif(isset($user_exist) AND $user_exist == TRUE) {
-		$tool_content .= "<table width='99%'><tbody><tr>
-          	<td class='caution' height='60'><p>$langUserFree</p>
-		<p><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p></td></tr></tbody></table><br /><br />";
-		draw($tool_content, 3, ' ', $head_content);
-	    exit();
-  }
-		if($registered_at>$expires_at) {
-			$tool_content .= "<center><br><b>$langExpireBeforeRegister<br><br><a href=\"edituser.php?u=".$u."\">$langAgain</a></b><br />";
-		} else {
-			if ($u=='1') $department = 'NULL';
-			$sql = "UPDATE user SET nom = ".autoquote($lname).", prenom = ".autoquote($fname).",
-				username = ".autoquote($username).", email = ".autoquote($email).", 
-				statut = ".intval($newstatut).", phone=".autoquote($phone).",
-				department = ".intval($department).", expires_at=".$expires_at.",
-                                am = ".autoquote($am)." WHERE user_id = ".intval($u);
-			$qry = db_query($sql);
-                        if (!$qry) {
-                                $tool_content .= "$langNoUpdate:".$u."!";
-                        } else {
-                                $num_update = mysql_affected_rows();
-                                if ($num_update == 1) {
-                                        $tool_content .= "<center><br /><b>$langSuccessfulUpdate</b><br><br />";
-                                } else {
-                                        $tool_content .= "<center><br /><b>$langUpdateNoChange</b><br><br />";
-                                }
-                        }
-                        $tool_content .= "<a href='listusers.php'>$langBack</a></center>";
-                }
+            // get the variables from the form and initialize them
+    		$fname = isset($_POST['fname'])?$_POST['fname']:'';
+    		$lname = isset($_POST['lname'])?$_POST['lname']:'';
+    
+    		// trim white spaces in the end and in the beginning of the word
+    		$username = preg_replace('/\ +/', ' ', trim(isset($_POST['username'])?$_POST['username']:''));
+    		$email = isset($_POST['email'])?$_POST['email']:'';
+    		$phone = isset($_POST['phone'])?$_POST['phone']:'';
+    		$am = isset($_POST['am'])?$_POST['am']:'';
+    		$department = isset($_POST['department'])?$_POST['department']:'NULL';
+    		$newstatut = isset($_POST['newstatut'])?$_POST['newstatut']:'NULL';
+    		$registered_at = isset($_POST['registered_at'])?$_POST['registered_at']:'';
+    		$date = isset($_POST['date'])?$_POST['date']:'';
+    		$hour = isset($_POST['hour'])?$_POST['hour']:'';
+    		$minute = isset($_POST['minute'])?$_POST['minute']:'';
+    		$date = explode("-",  $date);
+        		$day=$date[0];
+        		$year=$date[2];
+        		$month=$date[1];
+    		$expires_at = mktime($hour, $minute, 0, $month, $day, $year);
+    		$user_exist= FALSE;
+    
+    		$fname = htmlspecialchars($fname, ENT_QUOTES);
+    		$lname = htmlspecialchars($lname, ENT_QUOTES);
+    		$username = htmlspecialchars($username, ENT_QUOTES);
+    		$email = htmlspecialchars($email, ENT_QUOTES);
+    		$phone = htmlspecialchars($phone, ENT_QUOTES);
+    		$am = htmlspecialchars($am, ENT_QUOTES);
+    		$department = htmlspecialchars($fname, ENT_QUOTES);
+    		$newstatut = htmlspecialchars($newstatut, ENT_QUOTES);
+    		$registered_at = htmlspecialchars($registered_at, ENT_QUOTES);
+    		$date = htmlspecialchars($date, ENT_QUOTES);
+    		$hour = htmlspecialchars($hour, ENT_QUOTES);
+    		$minute = htmlspecialchars($minute, ENT_QUOTES);
+    
+    
+    
+    		// check if username is free
+      		$username_check=mysql_query("SELECT username FROM user WHERE username='".escapeSimple($username)."'");
+    		$nums = mysql_num_rows($username_check);
+    
+			if (mysql_num_rows($username_check) > 1) {
+						$user_exist = TRUE;
+			}
+			
+			// check if there are empty fields
+			if (empty($fname) OR empty($lname) OR empty($username)){
+				$tool_content .= "<table width='99%'><tbody><tr>
+					<td class='caution' height='60'><p>$langEmptyFields</p>
+				<p><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p></td></tr></tbody></table><br /><br />";
+				draw($tool_content, 3, ' ', $head_content);
+					exit();
+				}
+			elseif(isset($user_exist) AND $user_exist == TRUE) {
+				$tool_content .= "<table width='99%'><tbody><tr>
+					<td class='caution' height='60'><p>$langUserFree</p>
+				<p><a href='$_SERVER[PHP_SELF]'>$langAgain</a></p></td></tr></tbody></table><br /><br />";
+				draw($tool_content, 3, ' ', $head_content);
+				exit();
+			}
+			if($registered_at>$expires_at) {
+				$tool_content .= "<center><br><b>$langExpireBeforeRegister<br><br><a href=\"edituser.php?u=".$u."\">$langAgain</a></b><br />";
+			} else {
+				if ($u=='1') $department = 'NULL';
+				$sql = "UPDATE user SET nom = ".autoquote($lname).", prenom = ".autoquote($fname).",
+					username = ".autoquote($username).", email = ".autoquote($email).", 
+					statut = ".intval($newstatut).", phone=".autoquote($phone).",
+					department = ".intval($department).", expires_at=".$expires_at.",
+									am = ".autoquote($am)." WHERE user_id = ".intval($u);
+				$qry = db_query($sql);
+					if (!$qry) {
+						$tool_content .= "$langNoUpdate:".$u."!";
+					} else {
+						$num_update = mysql_affected_rows();
+						if ($num_update == 1) {
+								$tool_content .= "<center><br /><b>$langSuccessfulUpdate</b><br><br />";
+						} else {
+								$tool_content .= "<center><br /><b>$langUpdateNoChange</b><br><br />";
+						}
+					}
+					$tool_content .= "<a href='listusers.php'>$langBack</a></center>";
+				}
+		}
 	}
 }
 else

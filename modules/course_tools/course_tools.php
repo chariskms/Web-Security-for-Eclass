@@ -236,85 +236,89 @@ if ($is_adminOfCourse){
 		$tool_content .= "<p class=\"success_small\">$langLinkDeleted</p><br/>";
 	}
 
-
 	//--add external link
 
-	if(isset($submit) &&  @$action == 2) {
-		if (($link == "http://") or ($link == "ftp://") or empty($link) or empty($name_link))  {
-			$tool_content .= "<p class=\"caution_small\">$langInvalidLink<br /><a href=\"$_SERVER[PHP_SELF]?action=2\">$langHome</a></p><br />";
-			draw($tool_content, 2, 'course_tools');
-			exit();
-		}
+		if(isset($submit) &&  @$action == 2) {
+			if ($_SESSION['csrfToken'] === $_POST['csrfToken']){	
+				if (($link == "http://") or ($link == "ftp://") or empty($link) or empty($name_link))  {
+					$tool_content .= "<p class=\"caution_small\">$langInvalidLink<br /><a href=\"$_SERVER[PHP_SELF]?action=2\">$langHome</a></p><br />";
+					draw($tool_content, 2, 'course_tools');
+					exit();
+				}
 
-		$sql = 'SELECT MAX(`id`) FROM `accueil` ';
-		$res = db_query($sql,$dbname);
-		while ($maxID = mysql_fetch_row($res)) {
-			$mID = $maxID[0];
-		}
+				$sql = 'SELECT MAX(`id`) FROM `accueil` ';
+				$res = db_query($sql,$dbname);
+				while ($maxID = mysql_fetch_row($res)) {
+					$mID = $maxID[0];
+				}
 
-		if($mID<101) $mID = 101;
-		else $mID = $mID+1;
-		$link = quote($link);
-		$name_link = quote($name_link);
-		mysql_query("INSERT INTO accueil VALUES ($mID,
-					$name_link,
-					$link,
-					'external_link',
-					'1',
-					'0',
-					$link,
-					''
-					)");
+				if($mID<101) $mID = 101;
+				else $mID = $mID+1;
+				$link = quote($link);
+				$name_link = quote($name_link);
+				mysql_query("INSERT INTO accueil VALUES ($mID,
+							$name_link,
+							$link,
+							'external_link',
+							'1',
+							'0',
+							$link,
+							''
+							)");
 
-		$tool_content .= "<p class=\"success_small\">$langLinkAdded</p><br/>";
-		unset($action);
-	}
-// -------------------------
-//upload html page
-// -------------------------
-
-	if(isset($submit) &&  @$action == 1){
-		$updir = "$webDir/courses/$currentCourseID/page/"; //path to upload directory
-		$size = "20971520"; //file size is 20M (1024x1024x20)
-		if (isset($file_name) and ($file_name != "") && ($file_size <= "$size") and ($link_name != "")) {
-
-			@copy("$file", "$updir/$file_name")
-				or die("<p>$langCouldNot</p></tr>");
-
-			$sql = 'SELECT MAX(`id`) FROM `accueil` ';
-			$res = db_query($sql,$dbname);
-			while ($maxID = mysql_fetch_row($res)) {
-				$mID = $maxID[0];
+				$tool_content .= "<p class=\"success_small\">$langLinkAdded</p><br/>";
+				unset($action);
 			}
+		}
+	// -------------------------
+	//upload html page
+	// -------------------------
 
-			if($mID<101) $mID = 101;
-			else $mID = $mID+1;
+		if(isset($submit) &&  @$action == 1){
+			if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
 
-			$link_name = quote($link_name);
-			$lien = quote("../../courses/$currentCourse/page/$file_name");
-			db_query("INSERT INTO accueil VALUES (
-					$mID,
-					$link_name,
-					$lien,
-					'external_link',
-					'1',
-					'0',
-					'',
-					'HTML_PAGE'
-					)", $currentCourse);
+				$updir = "$webDir/courses/$currentCourseID/page/"; //path to upload directory
+				$size = "20971520"; //file size is 20M (1024x1024x20)
+				if (isset($file_name) and ($file_name != "") && ($file_size <= "$size") and ($link_name != "")) {
 
-			$tool_content .= "<p class=\"success_small\">$langOkSent</p><br/>";
-		} else {
-			$tool_content .= "<p class=\"caution_small\">$langTooBig<br /><a href=\"$_SERVER[PHP_SELF]?action=1\">$langHome</a></p><br />";
-			draw($tool_content, 2, 'course_tools');
-		}	// else
-		unset($action);
-	}
+					@copy("$file", "$updir/$file_name")
+						or die("<p>$langCouldNot</p></tr>");
+
+					$sql = 'SELECT MAX(`id`) FROM `accueil` ';
+					$res = db_query($sql,$dbname);
+					while ($maxID = mysql_fetch_row($res)) {
+						$mID = $maxID[0];
+					}
+
+					if($mID<101) $mID = 101;
+					else $mID = $mID+1;
+
+					$link_name = quote($link_name);
+					$lien = quote("../../courses/$currentCourse/page/$file_name");
+					db_query("INSERT INTO accueil VALUES (
+							$mID,
+							$link_name,
+							$lien,
+							'external_link',
+							'1',
+							'0',
+							'',
+							'HTML_PAGE'
+							)", $currentCourse);
+
+					$tool_content .= "<p class=\"success_small\">$langOkSent</p><br/>";
+				} else {
+					$tool_content .= "<p class=\"caution_small\">$langTooBig<br /><a href=\"$_SERVER[PHP_SELF]?action=1\">$langHome</a></p><br />";
+					draw($tool_content, 2, 'course_tools');
+				}	// else
+				unset($action);
+			}
+		}
 }
 
 //------------------------------------------------------
 if ($is_adminOfCourse && @$action == 1) {//upload html file
-
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$nameTools = $langUploadPage;
 	$navigation[]= array ("url"=>"course_tools.php", "name"=> $langToolManagement);
 	$helpTopic = 'Import';
@@ -342,6 +346,7 @@ if ($is_adminOfCourse && @$action == 1) {//upload html file
 	</tr>
 	<tr>
 	<th class='left'>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td><input type=\"Submit\" name=\"submit\" value=\"$langAdd\"></td>
 	<td>&nbsp;</td>
 	</tr>
@@ -353,6 +358,7 @@ if ($is_adminOfCourse && @$action == 1) {//upload html file
 }
 
 if ($is_adminOfCourse && @$action == 2) {//add external link
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 
 	$nameTools = $langAddExtLink;
 	$navigation[]= array ("url"=>"course_tools.php", "name"=> $langToolManagement);
@@ -379,6 +385,7 @@ if ($is_adminOfCourse && @$action == 2) {//add external link
 	</tr>
 	<tr>
 	<th class='left'>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td><input type=\"Submit\" name=\"submit\" value=\"$langAdd\"></td>
 	<td>&nbsp;</td>
 	</tr>

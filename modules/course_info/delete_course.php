@@ -32,7 +32,12 @@ $nameTools = $langDelCourse;
 $tool_content = "";
 
 if($is_adminOfCourse) {
+	
 	if(isset($delete)) {
+		$mysqlMainDb = escapeSimple($mysqlMainDb);
+		$currentCourseID = escapeSimple($currentCourseID);
+		$cours_id = escapeSimple($cours_id);
+
 		mysql_select_db("$mysqlMainDb",$db);
 		mysql_query("DROP DATABASE `$currentCourseID`");
 		mysql_query("DELETE FROM `$mysqlMainDb`.cours WHERE code='$currentCourseID'");

@@ -55,15 +55,18 @@ xinha_editors = ['xinha', 'xinha_en'];
 
 // default language
 if (!isset($localize)) $localize='el';
-
+$localize = htmlspecialchars($localize, ENT_QUOTES);
 // display settings
 $displayAnnouncementList = true;
 $displayForm = true;
 $id_hidden_input = '';
 
+// $var= htmlspecialchars($var, ENT_QUOTES);
+// $_POST[$var]= htmlspecialchars($_POST[$var], ENT_QUOTES);
+
 foreach (array('title', 'title_en', 'newContent', 'newContent_en', 'comment', 'comment_en') as $var) {
         if (isset($_POST[$var])) {
-                $GLOBALS[$var] = autoquote($_POST[$var]);
+                $GLOBALS[$var] = autoquote(htmlspecialchars($_POST[$var], ENT_QUOTES));
         } else {
                 $GLOBALS[$var] = '';
         }
@@ -71,10 +74,12 @@ foreach (array('title', 'title_en', 'newContent', 'newContent_en', 'comment', 'c
 $visible = isset($_POST['visible'])? 'V': 'I';
 
 if (isset($_GET['delete'])) {
+  
         // delete announcement command
         $id = intval($_GET['delete']);
         $result =  db_query("DELETE FROM admin_announcements WHERE id='$id'", $mysqlMainDb);
         $message = $langAdminAnnDel;
+    
 } elseif (isset($_GET['modify'])) {
         // modify announcement command
         $id = intval($_GET['modify']);
@@ -84,16 +89,27 @@ if (isset($_GET['delete'])) {
         if ($myrow) {
                 $id_hidden_input = "<input type='hidden' name='id' value='$myrow[id] />";
                 $titleToModify = q($myrow['gr_title']);
-                $contentToModify = $myrow['gr_body'];
+                $contentToModify = ($myrow['gr_body']);
                 $commentToModify = q($myrow['gr_comment']);
                 $titleToModifyEn = q($myrow['en_title']);
-                $contentToModifyEn = $myrow['en_body'];
+                $contentToModifyEn = ($myrow['en_body']);
                 $commentToModifyEn = q($myrow['en_comment']);
-                $visibleToModify = $myrow['visible'];
+                $visibleToModify = ($myrow['visible']);
                 $displayAnnouncementList = true;
         }
+
+        $contentToModify = str_replace("&lt;p&gt;", "<p>", $contentToModify);
+	$contentToModify = str_replace("&lt;/p&gt;", "</p>", $contentToModify); 
+        $contentToModify = str_replace("&lt;br /&gt;", "<br />", $contentToModify);
+        
+        $contentToModifyEn = str_replace("&lt;p&gt;", "<p>", $contentToModifyEn);
+	$contentToModifyEn = str_replace("&lt;/p&gt;", "</p>", $contentToModifyEn); 
+	$contentToModifyEn = str_replace("&lt;br /&gt;", "<br />", $contentToModifyEn);
 } elseif (isset($_POST['submitAnnouncement'])) {
-	// submit announcement command
+  
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+
+	    //submit announcement command
         if (isset($_POST['id'])) {
                 // modify announcement
                 $id = intval($_POST['id']);
@@ -110,7 +126,8 @@ if (isset($_GET['delete'])) {
                         en_title = $title_en, en_body = $newContent_en, en_comment = $comment_en,
                         visible = '$visible', date = NOW()");
                 $message = $langAdminAnnAdd;
-        }
+		}
+	}
 }
 
 // action message
@@ -122,6 +139,7 @@ if (isset($message) && !empty($message)) {
 
 // display form
 if ($displayForm && (@$addAnnouce==1 || isset($modify))) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
         $displayAnnouncementList = false;
         // display add announcement command
         $tool_content .= "<form method='post' action='$_SERVER[PHP_SELF]?localize=$localize'>";
@@ -141,6 +159,11 @@ if ($displayForm && (@$addAnnouce==1 || isset($modify))) {
         if (!isset($contentToModifyEn))	$contentToModifyEn ="";
         if (!isset($titleToModifyEn))	$titleToModifyEn ="";
         if (!isset($commentToModifyEn))	$commentToModifyEn ="";
+
+        $contentToModify = htmlspecialchars($contentToModify, ENT_QUOTES);
+        // $titleToModify = htmlspecialchars($titleToModify, ENT_QUOTES);
+        // $commentToModifyEn = htmlspecialchars($commentToModifyEn, ENT_QUOTES);
+
 
         $checked = (isset($visibleToModify) and $visibleToModify == 'V')? " checked='1'": '';
         $tool_content .= "
@@ -168,7 +191,8 @@ if ($displayForm && (@$addAnnouce==1 || isset($modify))) {
                <tr><th class='left'>$langAdminAnnCommEn</th>
                    <td><textarea name='comment_en' rows='2' cols='50' class='FormData_InputText'>$commentToModifyEn</textarea>
                        </td></tr>
-              <tr><th class='left'>&nbsp;</th>
+			  <tr><th class='left'>&nbsp;</th>
+				  <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
                   <td><input type='submit' name='submitAnnouncement' value='$langSubmit' /></td></tr>
               <tr><td colspan='2'>&nbsp;</td></tr>
           </tbody>

@@ -27,6 +27,7 @@ $cfg['Servers'][$i]['bs_temp_blob_timeout'] = 600;
 $cfg['Servers'][$i]['bs_temp_log_threshold'] = '32M';
 
 
+$cfg['CheckConfigurationPermissions'] = false;
 /*
  * End of servers configuration
  */

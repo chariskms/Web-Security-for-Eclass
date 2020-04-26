@@ -45,56 +45,74 @@ $version = 1;
 $encoding = 'ISO-8859-7';
 
 if (isset($send_archive) and $_FILES['archiveZipped']['size'] > 0) {
-	$tool_content .= "<table width='99%'><caption>".$langFileSent."</caption><tbody>
-	<tr><td width='3%'>$langFileSentName</td><td>".$_FILES['archiveZipped']['name']."</td></tr>
-	<tr><td width='3%'>$langFileSentSize</td><td>".$_FILES['archiveZipped']['size']."</td></tr>
-	<tr><td width='3%'>$langFileSentType</td><td>".$_FILES['archiveZipped']['type']."</td></tr><tr>
-	<td width='3%'>$langFileSentTName</td><td>".$_FILES['archiveZipped']['tmp_name']."</td></tr>";
-	$tool_content .= "</tbody></table><br />";
-	$tool_content .= "<table width='99%'><caption>".$langFileUnzipping."</caption><tbody>";
-	$tool_content .= "<tr><td>".unpack_zip_show_files($archiveZipped)."</td></tr>";
-	$tool_content .= "<tbody></table><br />";
-} elseif (isset($_POST['send_path']) and isset($_POST['pathToArchive'])) {
-        $pathToArchive = $_POST['pathToArchive'];
-	if (file_exists($pathToArchive)) {
-		$tool_content .= "<table width='99%'><caption>".$langFileUnzipping."</caption><tbody>";
-		$tool_content .= "<tr><td>".unpack_zip_show_files($pathToArchive)."</td></tr>";
-		$tool_content .= "<tbody></table><br />";
-	} else {
-		$tool_content .= $langFileNotFound;
-	}
-} elseif (isset($create_dir_for_course)) {
-	$r = $restoreThis."/html";
-	list($new_course_code, $new_course_id) = create_course($course_code, $course_lang, $course_title,
-		$course_desc, intval($course_fac), $course_vis, $course_prof, $course_type);
-	move_dir($r, "$webDir/courses/$new_course_code");
-	course_index("$webDir/courses/$new_course_code", $new_course_code);
-	$tool_content .= "<p>$langCopyFiles $webDir/courses/$new_course_code</p><br /><p>";
-	$action = 1;
-	$userid_map = array();
-	// now we include the file for restoring
-	ob_start();
-	include("$restoreThis/backup.php");
-	if ($encoding != 'UTF-8') {
-		db_query('SET NAMES greek');
-	}
-	if (!isset($eclass_version) or $eclass_version < ECLASS_VERSION) { // if we come from older versions 
-		if ($version < '2.2') { // if we come from 2.1.x
-			upgrade_course_2_2($new_course_code, $course_lang);
-		} else {
-			upgrade_course($new_course_code, $course_lang);
-		}
-	}
-	$tool_content .= ob_get_contents();
-	ob_end_clean();
+	//echo '<script type="text/javascript">alert("'.$_FILES['archiveZipped']['name'].'");</script>';
 
-	$tool_content .= "</p>";
-	if (!file_exists($webDir."courses/garbage"))
-		mkdir($webDir."courses/garbage");
-	if (!file_exists($webDir."courses/garbage/tmpUnzipping"))
-		mkdir($webDir."courses/garbage/tmpUnzipping");
-	rename($webDir."courses/tmpUnzipping", $webDir."courses/garbage/tmpUnzipping/".time()."");
-	$tool_content .= "<br /><center><p><a href='../admin/index.php'>$langBack</p></center>";
+	if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+	//echo '<script type="text/javascript">alert("case 1");</script>';
+		$ext = get_file_extension($_FILES['archiveZipped']['name']);
+		if($ext == 'exe' || $ext == 'php' || $ext == 'js' || $ext == 'html' || $ext == 'css' ||  $ext == 'jsp' || $ext == 'json'){
+			exit;
+		}
+
+		$tool_content .= "<table width='99%'><caption>".$langFileSent."</caption><tbody>
+		<tr><td width='3%'>$langFileSentName</td><td>".$_FILES['archiveZipped']['name']."</td></tr>
+		<tr><td width='3%'>$langFileSentSize</td><td>".$_FILES['archiveZipped']['size']."</td></tr>
+		<tr><td width='3%'>$langFileSentType</td><td>".$_FILES['archiveZipped']['type']."</td></tr><tr>
+		<td width='3%'>$langFileSentTName</td><td>".$_FILES['archiveZipped']['tmp_name']."</td></tr>";
+		$tool_content .= "</tbody></table><br />";
+		$tool_content .= "<table width='99%'><caption>".$langFileUnzipping."</caption><tbody>";
+		$tool_content .= "<tr><td>".unpack_zip_show_files($archiveZipped)."</td></tr>";
+		$tool_content .= "<tbody></table><br />";
+	}
+} elseif (isset($_POST['send_path']) and isset($_POST['pathToArchive'])) {
+	if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		//echo '<script type="text/javascript">alert("case 2");</script>';
+			$pathToArchive = htmlspecialchars($_POST['pathToArchive'], ENT_QUOTES);
+				
+			if (file_exists($pathToArchive)) {
+				$tool_content .= "<table width='99%'><caption>".$langFileUnzipping."</caption><tbody>";
+				$tool_content .= "<tr><td>".unpack_zip_show_files($pathToArchive)."</td></tr>";
+				$tool_content .= "<tbody></table><br />";
+			} else {
+				$tool_content .= $langFileNotFound;
+			}
+	}
+} elseif (isset($create_dir_for_course) && isset($restoreThis)) {
+
+	if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		//echo '<script type="text/javascript">alert("case 3");</script>';	
+		$r = $restoreThis."/html";
+		list($new_course_code, $new_course_id) = create_course($course_code, $course_lang, $course_title,
+			$course_desc, intval($course_fac), $course_vis, $course_prof, $course_type);
+		move_dir($r, "$webDir/courses/$new_course_code");
+		course_index("$webDir/courses/$new_course_code", $new_course_code);
+		$tool_content .= "<p>$langCopyFiles $webDir/courses/$new_course_code</p><br /><p>";
+		$action = 1;
+		$userid_map = array();
+		// now we include the file for restoring
+		ob_start();
+		include("$restoreThis/backup.php");
+		if ($encoding != 'UTF-8') {
+			db_query('SET NAMES greek');
+		}
+		if (!isset($eclass_version) or $eclass_version < ECLASS_VERSION) { // if we come from older versions 
+			if ($version < '2.2') { // if we come from 2.1.x
+				upgrade_course_2_2($new_course_code, $course_lang);
+			} else {
+				upgrade_course($new_course_code, $course_lang);
+			}
+		}
+		$tool_content .= ob_get_contents();
+		ob_end_clean();
+
+		$tool_content .= "</p>";
+		if (!file_exists($webDir."courses/garbage"))
+			mkdir($webDir."courses/garbage");
+		if (!file_exists($webDir."courses/garbage/tmpUnzipping"))
+			mkdir($webDir."courses/garbage/tmpUnzipping");
+		rename($webDir."courses/tmpUnzipping", $webDir."courses/garbage/tmpUnzipping/".time()."");
+		$tool_content .= "<br /><center><p><a href='../admin/index.php'>$langBack</p></center>";
+	}
 }
 
 elseif (isset($_POST['pathOf4path'])) {
@@ -104,22 +122,27 @@ elseif (isset($_POST['pathOf4path'])) {
 
 	// If $action == 0, the course isn't restored - the user just
 	// gets a form with the archived course details.
-	$action = 0;
-	ob_start();
-	include($_POST['restoreThis'] . '/backup.php');
-	$tool_content .= ob_get_contents();
-	ob_end_clean();
+	if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		//echo '<script type="text/javascript">alert("case 4");</script>';
+		$action = 0;
+		ob_start();
+		include($_POST['restoreThis'] . '/backup.php');
+		$tool_content .= ob_get_contents();
+		ob_end_clean();
+	}
 } else {
 
 // -------------------------------------
 // Displaying Form
 // -------------------------------------
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "<table width='99%' class='FormData'>
 	<tbody><tr><th>&nbsp;</th><td><b>$langFirstMethod</b></td></tr>
 	<tr><th>&nbsp;</th><td>$langRequest1
 	<br /><br />
 	<form action='".$_SERVER['PHP_SELF']."' method='post' name='sendZip' enctype='multipart/form-data'>
 	<input type='file' name='archiveZipped' />
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<input type='submit' name='send_archive' value='".$langSend."' />
 	</form>
 	</td>
@@ -134,6 +157,7 @@ elseif (isset($_POST['pathOf4path'])) {
 	<br /><br />
 	<form action='".$_SERVER['PHP_SELF']."' method='post'>
 	<input type='text' name='pathToArchive' />
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<input type='submit' name='send_path' value='".$langSend."' />
 	</form>
 	</td></tr>
@@ -181,6 +205,7 @@ function course_details($code, $lang, $title, $desc, $fac, $vis, $prof, $type) {
 
         // display the restoring form
 	if (!$action) {
+		$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 		echo "<form action='$_SERVER[PHP_SELF]' method='post'>";
   		echo "<table width='99%' class='FormData'><tbody>";
 		echo "<tr><td align='justify' colspan='2'>$langInfo1</td></tr>";
@@ -199,6 +224,7 @@ function course_details($code, $lang, $title, $desc, $fac, $vis, $prof, $type) {
 		echo "<tr><td colspan='2'><input type='checkbox' name='course_addusers' checked='1' />$langUsersWillAdd </td></tr>";
 		echo "<tr><td colspan='2'><input type='checkbox' name='course_prefix' />$langUserPrefix</td></tr>";
 		echo "<tr><td>&nbsp;</td></tr><tr><td>";
+		echo "<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>";
 		echo "<input type='submit' name='create_dir_for_course' value='$langOk' />";
 		echo "<input type='hidden' name='restoreThis' value='$restoreThis' />";
 		echo "</td></tr></tbody></table></form>";
@@ -209,6 +235,14 @@ function course_details($code, $lang, $title, $desc, $fac, $vis, $prof, $type) {
 function announcement($text, $date, $order, $title = '') {
 	global $action, $new_course_id, $mysqlMainDb;
 	if (!$action) return;
+
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$title = escapeSimple($title);
+	$text = escapeSimple($text);
+	$date = escapeSimple($date);
+	$order = escapeSimple($order);
+	$new_course_id = escapeSimple($new_course_id);
+
 	db_query("INSERT into `$mysqlMainDb`.annonces
 		(title, contenu, temps, cours_id, ordre)
 		VALUES (".
@@ -227,6 +261,13 @@ function course_units($title, $comments, $visibility, $order, $resource_units) {
 	
 	if (!$action) return;
 	
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$title = escapeSimple($title);
+	$comments = escapeSimple($comments);
+	$visibility = escapeSimple($visibility);
+	$order = escapeSimple($order);
+	$new_course_id = escapeSimple($new_course_id);
+
 	db_query("INSERT into `$mysqlMainDb`.course_units
 		(title, comments, visibility, `order`, course_id)
 		VALUES (".
@@ -239,6 +280,7 @@ function course_units($title, $comments, $visibility, $order, $resource_units) {
 			")");
 	$unit_id = mysql_insert_id();
 	foreach ($resource_units as $key => $units_array) {
+		$units_array = escapeSimple($units_array);
 		db_query("INSERT into `$mysqlMainDb`.unit_resources (unit_id, title, comments, res_id, type, visibility, `order`, date)
 			VALUES (".$unit_id.",".join(", ", array_map('quote',$units_array)).");\n");
 	}
@@ -279,6 +321,10 @@ function user($userid, $name, $surname, $login, $password, $email, $statut, $pho
 		}
 	}
 
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$login = escapeSimple($login);
+	
+	
 	$u = mysql_query("SELECT * FROM `$mysqlMainDb`.user WHERE BINARY username=".quote($login));
 	if (mysql_num_rows($u) > 0) 	{
 		$res = mysql_fetch_array($u);
@@ -289,6 +335,19 @@ function user($userid, $name, $surname, $login, $password, $email, $statut, $pho
 		if ($version == 1) { // if we come from a archive < 2.x encrypt user password
 			$password = md5($password);
 		}
+		$name = escapeSimple($name);
+		$surname = escapeSimple($surname);
+		$login = escapeSimple($login);
+		$password = escapeSimple($password);
+		$email = escapeSimple($email);
+		$statut = escapeSimple($statut);
+		$phone = escapeSimple($phone);
+		$department = escapeSimple($department);
+		$registered_at = escapeSimple($registered_at);
+		$expires_at = escapeSimple($expires_at);
+		$mysqlMainDb = escapeSimple($mysqlMainDb);
+
+
 		db_query("INSERT into `$mysqlMainDb`.user
 			(nom, prenom, username, password, email, statut, phone, department, registered_at, expires_at)
 			VALUES (".
@@ -307,6 +366,10 @@ function user($userid, $name, $surname, $login, $password, $email, $statut, $pho
 				")");
 		$userid_map[$userid] = mysql_insert_id();
 	}
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$new_course_id = escapeSimple($new_course_id);
+	$userid_map[$userid] = escapeSimple($userid_map[$userid]);
+	$statut = escapeSimple($statut);
 
 	db_query("INSERT into `$mysqlMainDb`.cours_user
 		(cours_id, user_id, statut)
@@ -332,6 +395,12 @@ function group($userid, $team, $status, $role) {
 	if (!$action or !$course_addusers or !isset($userid_map[$userid])) {
 		return;
 	}
+
+	$userid_map[$userid] = escapeSimple($userid_map[$userid]);
+	$team = escapeSimple($team);
+	$status = escapeSimple($status);
+	$role = escapeSimple($role);
+
 	mysql_select_db($new_course_code);
 	db_query("INSERT into user_group
 		(user,team,status,role)
@@ -351,6 +420,16 @@ function dropbox_file($userid, $filename, $filesize, $title, $description, $auth
 	if (!$action) return;
 	if (!$course_addusers) return;
 	mysql_select_db($new_course_code);
+
+	$userid_map[$userid] = escapeSimple($userid_map[$userid]);
+	$filename = escapeSimple($filename);
+	$filesize = escapeSimple($filesize);
+	$title = escapeSimple($title);
+	$description = escapeSimple($description);
+	$uploadDate = escapeSimple($uploadDate);
+	$lastUploadDate = escapeSimple($lastUploadDate);
+
+	
 	db_query("INSERT into dropbox_file
 		(uploaderId,filename,filesize,title,description,author,uploadDate,lastUploadDate)
 		VALUES (".
@@ -370,6 +449,10 @@ function dropbox_person($fileId, $personId) {
 	global $action, $userid_map, $new_course_code, $course_addusers;
 	if (!$action) return;
 	if (!$course_addusers) return;
+
+	$fileId = escapeSimple($fileId);
+	$userid_map[$personId] = escapeSimple($userid_map[$personId]);
+
 	mysql_select_db($course_code);
 	db_query("INSERT into dropbox_person(fileId, personId)
 		VALUES (".
@@ -384,6 +467,9 @@ function dropbox_post($fileId, $recipientId) {
 	if (!$action) return;
 	if (!$course_addusers) return;
 	mysql_select_db($new_course_code);
+	$fileId = escapeSimple($fileId);
+	$userid_map[$recipientId] = escapeSimple($userid_map[$recipientId]);
+
 	db_query("INSERT into dropbox_post (fileId, recipientId)
 		VALUES (".
 		join(", ", array(
@@ -409,6 +495,9 @@ function assignment_submit($userid, $assignment_id, $submission_date,
 		$grade_submission_ip) as $v) {
 		$values[] = quote($v);
 	}
+
+	$userid_map[$userid] = escapeSimple($userid_map[$userid]);
+
 	db_query("INSERT into assignment_submit
 		(uid, assignment_id, submission_date,
 		 submission_ip, file_path, file_name,
@@ -428,6 +517,19 @@ function create_course($code, $lang, $title, $desc, $fac, $vis, $prof, $type) {
 		echo $langCourseExists;
 		exit;
 	}
+
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$repertoire = escapeSimple($repertoire);
+	$lang = escapeSimple($lang);
+	$desc = escapeSimple($desc);
+	$title = escapeSimple($title);
+	$fac = escapeSimple($fac);
+	$vis = escapeSimple($vis);
+	$prof = escapeSimple($prof);
+	$code = escapeSimple($code);
+	$type = escapeSimple($type);
+
+
 	db_query("INSERT into `$mysqlMainDb`.cours
 		(code, languageCourse, intitule, description, faculte, visible, titulaires, fake_code, type)
 		VALUES (".
@@ -510,6 +612,7 @@ function faculty_select($current)
 {
 	global $mysqlMainDb;
 	$ret = "";
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
 
 	$ret .= "<select name='course_fac'>\n";
 	$res = mysql_query("SELECT id, name FROM `$mysqlMainDb`.faculte ORDER BY number");

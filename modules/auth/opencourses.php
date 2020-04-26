@@ -69,6 +69,7 @@ $tool_content .= "
     <td><a name='top'>&nbsp;</a>$langFaculty:&nbsp;<b>$fac</b></td>
     <td><div align='right'>";
 // get the different course types available for this faculte
+$fc = intval($fc);
 $typesresult = db_query("SELECT DISTINCT cours.type types FROM cours WHERE cours.faculteid = $fc ORDER BY cours.type");
 // count the number of different types
 $numoftypes = mysql_num_rows($typesresult);;
@@ -104,6 +105,8 @@ if ($numoftypes > 1) {
 foreach (array("pre" => $langpres,
         "post" => $langposts,
         "other" => $langothers) as $type => $message) {
+    $fc = intval($fc);
+    $type = escapeSimple($type);
     $result = mysql_query("SELECT
 			cours.code k,
 			cours.fake_code c,

@@ -31,11 +31,17 @@ if (!isset($language)) {
 	$language = preg_replace('/[^a-z-]/', '', $language);
 }
 
-if (file_exists("../lang/$language/help.inc.php")) {
+$allowedPages = array('english', 'greek', 'spanish');
+
+
+if (file_exists("../lang/$language/help.inc.php") && in_array($language, $allowedPages) && isset($language)) {
 	include("../lang/$language/help.inc.php");
-} else {
-	die('No such help topic');
+} 
+else{
+	http_response_code(404);
+	die();
 }
+
 
 // Default topic
 if (!isset($_GET['topic']) || empty($GLOBALS["lang$_GET[topic]Content"])) {

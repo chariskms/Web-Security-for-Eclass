@@ -59,6 +59,8 @@ if (!isset($doit) or $doit != "yes") {
 
 } else {
 if (isset($uid) and $uid==$_SESSION['uid']) {
+        $uid = escapeSimple($uid);   
+        $cid = escapeSimple($cid);
             db_query("DELETE from cours_user WHERE cours_id = (SELECT cours_id FROM cours WHERE code = " . quote($cid) . ") AND user_id='$uid'");
                 if (mysql_affected_rows() > 0) {
                         $tool_content .= "<p class='success_small'>$langCoursDelSuccess</p>";

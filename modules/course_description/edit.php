@@ -79,24 +79,35 @@ mysql_select_db($_SESSION['dbname']);
 
 if ($is_adminOfCourse) {
         if (isset($_POST['save'])) {
-                if ($_POST['edIdBloc'] == 'add') {
-                        $res = db_query("SELECT MAX(id) FROM course_description");
-                        list($max_id) = mysql_fetch_row($res);
-                        $new_id = max(sizeof($titreBloc), $max_id) + 1;
-                } else {
-                        $new_id = intval($_POST['edIdBloc']);
-                }
-                if (empty($edTitleBloc)) {
-                        $edTitleBloc = $titreBloc[$edIdBloc];
-                }
-                db_query("INSERT IGNORE INTO course_description SET id = $new_id");
-                db_query("UPDATE course_description
-                                SET title = " . autoquote(trim($edTitleBloc)) . ",
-                                    content = " . autoquote(trim($edContentBloc)) . ",
-                                    `upDate` = NOW()
-                                WHERE id = $new_id");
-                header('Location: ' . $urlServer . 'modules/course_description/edit.php');
-                exit;
+			if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+				if ($_POST['edIdBloc'] == 'add') {
+						$res = db_query("SELECT MAX(id) FROM course_description");
+						list($max_id) = mysql_fetch_row($res);
+						$new_id = max(sizeof($titreBloc), $max_id) + 1;
+				} else {
+						$new_id = intval($_POST['edIdBloc']);
+				}
+				if (empty($edTitleBloc)) {
+						$edTitleBloc = $titreBloc[$edIdBloc];
+				}
+				$new_id = intval($new_id);
+					db_query("INSERT IGNORE INTO course_description SET id = $new_id");
+				$edContentBloc = htmlspecialchars($edContentBloc, ENT_QUOTES);
+
+
+				$edContentBloc = str_replace("&lt;p&gt;", "<p>", $edContentBloc);
+				$edContentBloc = str_replace("&lt;/p&gt;", "</p>", $edContentBloc); 
+				$edContentBloc = str_replace("&lt;br /&gt;", "<br />", $edContentBloc);
+
+				$edTitleBloc = htmlspecialchars($edTitleBloc, ENT_QUOTES);
+				db_query("UPDATE course_description
+								SET title = " . autoquote(trim(escapeSimple($edTitleBloc))) . ",
+										content = " . autoquote(trim(escapeSimple($edContentBloc))) . ",
+										`upDate` = NOW()
+								WHERE id = $new_id");
+				header('Location: ' . $urlServer . 'modules/course_description/edit.php');
+				exit;
+			}    
         } elseif (isset($_GET['delete'])) {
                 $del_id = intval($_GET['numBloc']);
 		$res = db_query("DELETE FROM course_description WHERE id = $del_id");
@@ -106,21 +117,27 @@ if ($is_adminOfCourse) {
                 // Edit action
                 $edit_id = intval($_REQUEST['numBloc']);
                 $numBlock = $edit_id;
+                $numBlock = htmlspecialchars($numBlock, ENT_QUOTES);
                 $res = db_query("SELECT * FROM course_description WHERE id = $edit_id");
                 $title = '';
                 if ($res and mysql_num_rows($res) > 0) {
                         $blocs = mysql_fetch_array($res);
                         $title = q($blocs['title']);
                         $contentBloc = $blocs["content"];
+
+                        $blocs = htmlspecialchars($blocs, ENT_QUOTES);
+                        //$title = htmlspecialchars($title, ENT_QUOTES);
+                        //$contentBloc = htmlspecialchars($contentBloc, ENT_QUOTES);
                 } else {
                         if (isset($titreBloc[$edit_id])) {
                                 $title = q($titreBloc[$edit_id]);
+                                //$title = htmlspecialchars($title, ENT_QUOTES);
                         }
                         if (!isset($titreBlocNotEditable[$edit_id]) or !$titreBlocNotEditable[$numBloc]) {
                                 $numBloc = 'add';
                         }
                 }
-
+                $_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
                 $tool_content .= "<form method='post' action='$_SERVER[PHP_SELF]'>
                         <input type='hidden' name='edIdBloc' value='$numBloc' />
                         <table width='99%' class='FormData' align='left'><tbody>
@@ -141,9 +158,11 @@ if ($is_adminOfCourse) {
                                 q(@$contentBloc) . "</textarea></td></tr></table></td></tr>
                         <tr><th class='left'>&nbsp;</th>
                             <td><input type='submit' name='save' value='$langAdd' />&nbsp;&nbsp;
+	        	        <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
                                 <input type='submit' name='ignore' value='$langBackAndForget' /></td></tr>
                     </tbody></table></form>\n";
         } else {
+                $_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
                 $sql = "SELECT * FROM `course_description` order by id";
                 $res = db_query($sql,$db);
                 while($bloc = mysql_fetch_array($res)) {
@@ -167,8 +186,9 @@ if ($is_adminOfCourse) {
 			if (!isset($blocState[$numBloc])||$blocState[$numBloc] != "used")
 				$tool_content .= "\n            <option value='".$numBloc."'>".$titreBloc[$numBloc]."</option>";
 		}
-		$tool_content .= "\n</select></td></tr><tr><th>&nbsp;</th>
-      		<td><input type='submit' name='add' value='$langAdd' /></td>
+                $tool_content .= "\n</select></td></tr><tr><th>&nbsp;</th>
+                      <td><input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
+                      <input type='submit' name='add' value='$langAdd' /></td>
     		</tr></tbody></table>
     		<p>&nbsp;</p>
     </form>\n";
@@ -192,6 +212,7 @@ if ($is_adminOfCourse) {
 			}
 		}
 	}
+
 } else {
 	exit();
 }

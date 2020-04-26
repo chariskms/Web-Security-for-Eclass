@@ -65,6 +65,8 @@ if (isset($_POST["submit"])) {
                         if (is_restricted($cid)) {
                                 $tool_content .= "(restricted unsub $cid) ";
                         } else {
+                                $uid = escapeSimple($uid);
+                                $cid = escapeSimple($cid);
                                 db_query("DELETE FROM cours_user
                                                 WHERE statut <> 1 AND statut <> 10 AND
                                                 user_id = $uid AND cours_id = $cid");
@@ -75,6 +77,7 @@ if (isset($_POST["submit"])) {
 	$errorExists = false;
         foreach ($selectCourse as $key => $value) {
                 $cid = intval($value);
+                $cid = escapeSimple($cid);
                 $course_info = db_query("SELECT fake_code, password FROM cours WHERE cours_id = $cid");
                 if ($course_info) {
                         $row = mysql_fetch_array($course_info);
@@ -87,6 +90,8 @@ if (isset($_POST["submit"])) {
                                 $errorExists = true;
                                 $restrictedCourses[] = $row['fake_code'];
                         } else {
+                                $uid = escapeSimple($uid);
+                                $cid = escapeSimple($cid);
                                 db_query("INSERT IGNORE INTO `cours_user` (`cours_id`, `user_id`, `statut`, `reg_date`)
                                                  VALUES ($cid, $uid, 5, CURDATE())");
                         }
@@ -127,7 +132,9 @@ if (isset($_POST["submit"])) {
 					$tool_content .= "\n        <tr class='odd'>";
 				}
 				$tool_content .= "\n<td>&nbsp;<img src='../../images/arrow_blue.gif' />&nbsp;
-					<a href='$_SERVER[PHP_SELF]?fc=$fac[id]'>" . htmlspecialchars($fac['name']) . "</a> <small><font color='#a33033'>($fac[code])</font></small>";
+                                        <a href='$_SERVER[PHP_SELF]?fc=$fac[id]'>" . htmlspecialchars($fac['name']) . "</a> <small><font color='#a33033'>($fac[code])</font></small>";
+                           
+                                $fac[id]= escapeSimple($fac[id]); 
 				$n=db_query("SELECT COUNT(*) FROM cours_faculte WHERE facid='$fac[id]'");
 				$r=mysql_fetch_array($n);
 				$tool_content .= "&nbsp;<small><font color=#a5a5a5>($r[0]  ". ($r[0] == 1? $langAvCours: $langAvCourses) . ")</font><small></td></tr>";
@@ -173,8 +180,9 @@ draw($tool_content, 1);
 
 
 function getfacfromfc( $dep_id) {
-	$dep_id = intval( $dep_id);
-
+        $dep_id = intval( $dep_id);
+        
+        $dep_id= escapeSimple($dep_id); 
 	$fac = mysql_fetch_row(db_query("SELECT name FROM faculte WHERE id = '$dep_id'"));
 	if (isset($fac[0]))
 		return $fac[0];
@@ -183,6 +191,8 @@ function getfacfromfc( $dep_id) {
 }
 
 function getfcfromuid($uid) {
+
+        $uid= escapeSimple($uid); 
 	$res = mysql_fetch_row(db_query("SELECT department FROM user WHERE user_id = '$uid'"));
 	if (isset($res[0]))
 		return $res[0];
@@ -205,7 +215,8 @@ function expanded_faculte($fac_name, $facid, $uid) {
 
 	$retString = "";
 
-	// build a list of course followed by user.
+        // build a list of course followed by user.
+        $uid= escapeSimple($uid);
 	$usercourses = db_query("SELECT cours.code code_cours, cours.fake_code fake_code,
                                         cours.cours_id cours_id, statut
                                  FROM cours_user, cours
@@ -216,7 +227,7 @@ function expanded_faculte($fac_name, $facid, $uid) {
 
 	$retString .= "<table width='99%' align='left'><tbody>
                        <tr><td><a name='top'> </a>$langFaculty: <b>$fac_name</b>&nbsp;&nbsp;</td></tr>";
-
+        $facid= escapeSimple($facid);
 	// get the different course types available for this faculte
 	$typesresult = db_query("SELECT DISTINCT type FROM cours
                                  WHERE cours.faculteid = '$facid' AND cours.visible <> 0
@@ -251,7 +262,8 @@ function expanded_faculte($fac_name, $facid, $uid) {
         foreach (array("pre" => $langpres,
                        "post" => $langposts,
                        "other" => $langothers) as $type => $message) {
-
+                $facid= escapeSimple($facid); 
+                $type= escapeSimple($type);       
                 $result=db_query("SELECT
                                         cours.cours_id cid,
                                         cours.code k,
@@ -389,6 +401,8 @@ function collapsed_facultes_vert($fc) {
 	while ($fac = mysql_fetch_array($result)) {
 		$retString .= "<a href='?fc=$fac[id]' class='normal'>$fac[f]</a>";
 
+                $fac[f]= escapeSimple($fac[f]); 
+
 		$n = db_query("SELECT COUNT(*) FROM cours
 			WHERE cours.faculte='$fac[f]' AND cours.visible <> '0'");
                 $r = mysql_fetch_array($n);
@@ -440,6 +454,8 @@ function dep_selection($fc) {
 // check if a course is restricted
 function is_restricted($cours_id)
 {
+        $cours_id= escapeSimple($cours_id); 
+
 	$res = mysql_fetch_row(db_query("SELECT visible FROM cours WHERE cours_id = $cours_id"));
 	if ($res[0] == 0) {
 		return true;

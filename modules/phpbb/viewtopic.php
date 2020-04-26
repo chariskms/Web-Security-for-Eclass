@@ -84,6 +84,13 @@ if (isset($_GET['all'])) {
         $paging = true;
 }
 
+$topic = htmlspecialchars($topic, ENT_QUOTES);
+$forum = htmlspecialchars($forum, ENT_QUOTES);
+
+$forum = intval($forum);
+
+$topic = escapeSimple($topic);
+
 $sql = "SELECT f.forum_type, f.forum_name
 	FROM forums f, topics t 
 	WHERE (f.forum_id = '$forum') AND (t.topic_id = $topic) AND (t.forum_id = f.forum_id)";
@@ -209,18 +216,25 @@ $tool_content .= <<<cData
 cData;
 
 $topic = intval($_GET['topic']);
+
 if (isset($_GET['all'])) {
     $sql = "SELECT p.*, pt.post_text FROM posts p, posts_text pt 
 		WHERE topic_id = '$topic' 
 		AND p.post_id = pt.post_id
 		ORDER BY post_id";
 } elseif (isset($_GET['start'])) {
+
+	$posts_per_page = escapeSimple($posts_per_page);
+
 	$start = intval($_GET['start']);
 	$sql = "SELECT p.*, pt.post_text FROM posts p, posts_text pt 
 		WHERE topic_id = '$topic' 
 		AND p.post_id = pt.post_id
 		ORDER BY post_id LIMIT $start, $posts_per_page";
 } else {
+
+	$posts_per_page = escapeSimple($posts_per_page);
+
 	$sql = "SELECT p.*, pt.post_text FROM posts p, posts_text pt
 		WHERE topic_id = '$topic'
 		AND p.post_id = pt.post_id
@@ -266,8 +280,16 @@ do {
 	$count++;
 } while($myrow = mysql_fetch_array($result));
 
-$sql = "UPDATE topics SET topic_views = topic_views + 1 WHERE topic_id = '$topic'";
-db_query($sql, $currentCourseID);
+$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$currentCourseID",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+
+$sql = $pdodb -> prepare("UPDATE topics SET topic_views = topic_views + 1 WHERE topic_id = ?");
+
+$sql -> bindParam(1, $topic);
+$sql -> execute();
+
+
+// $sql = "UPDATE topics SET topic_views = topic_views + 1 WHERE topic_id = '$topic'";
+// db_query($sql, $currentCourseID);
 
 $tool_content .= "</tbody></table>";
 

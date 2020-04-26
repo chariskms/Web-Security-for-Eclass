@@ -38,12 +38,15 @@ $tool_content = "";
 
 
 if (isset($_POST['submit'])) {
-	foreach (array('temp' => 2, 'garbage' => 5, 'archive' => 1, 'tmpUnzipping' => 1) as $dir => $days) {
-		$tool_content .= sprintf("<p class=kk>$langCleaningUp</p>", $days,
-			($days == 1)? $langDaySing: $langDayPlur, $dir);
-		cleanup("${webDir}courses/$dir", $days);
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		foreach (array('temp' => 2, 'garbage' => 5, 'archive' => 1, 'tmpUnzipping' => 1) as $dir => $days) {
+			$tool_content .= sprintf("<p class=kk>$langCleaningUp</p>", $days,
+				($days == 1)? $langDaySing: $langDayPlur, $dir);
+			cleanup("${webDir}courses/$dir", $days);
+		}
 	}
 } else {
+    $_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "
     <table width='99%' class='FormData' align='left'>
     <tbody>
@@ -54,7 +57,8 @@ if (isset($_POST['submit'])) {
     <tr>
       <th width='220'>&nbsp;</th>
       <td>
-         <form method='post' action='$_SERVER[PHP_SELF]'>
+		 <form method='post' action='$_SERVER[PHP_SELF]'>
+		 <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	     <input type='submit' name='submit' value='$langCleanup'>
          </form>
       </td>

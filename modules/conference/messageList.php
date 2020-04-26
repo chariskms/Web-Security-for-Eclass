@@ -90,13 +90,27 @@ if (isset($_GET['store']) && $is_adminOfCourse) {
                 $alert_div= $langSaveErrorMessage;
         }
 	echo $alert_div;
-	db_query("INSERT INTO document SET path='/$chat_filename', filename='$saveIn',
-		date=NOW(), date_modified=NOW()", $currentCourseID);
+	
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$currentCourseID",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+
+	$sql = $pdodb->prepare("INSERT INTO document SET path= ?, filename= ?,
+	date=NOW(), date_modified=NOW()");
+
+	$temp0 = '/' + $chat_filename;
+	$sql->bindParam(1,$temp0);
+	$sql->bindParam(2,$saveIn);
+
+	$sql->execute();
+	
+	// db_query("INSERT INTO document SET path='/$chat_filename', filename='$saveIn',
+	// 	date=NOW(), date_modified=NOW()", $currentCourseID);
 	exit;
 }
 
 // add new line
 if (isset($chatLine) and trim($chatLine) != '') {
+
+	$chatLine = htmlspecialchars($chatLine, ENT_QUOTES);
 	$fchat = fopen($fileChatName,'a');
 	$chatLine = mathfilter($chatLine, 12, '../../courses/mathimg/');
 	fwrite($fchat,$timeNow.' - '.$nick.' : '.stripslashes($chatLine)."\n");

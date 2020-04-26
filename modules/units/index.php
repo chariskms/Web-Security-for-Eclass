@@ -75,8 +75,12 @@ _editor_lang = '$lang_editor';
 }  elseif(isset($_REQUEST['edit_res_submit'])) { // edit resource
 	$res_id = intval($_REQUEST['resource_id']);	
 	if ($id = check_admin_unit_resource($res_id)) {
-		@$restitle = autoquote(trim($_REQUEST['restitle']));
-                $rescomments = autoquote(trim($_REQUEST['rescomments']));
+		@$restitle = autoquote(trim(escapeSimple($_REQUEST['restitle'])));
+                $rescomments = autoquote(trim(escapeSimple($_REQUEST['rescomments'])));
+
+                $id = escapeSimple($id);
+                $res_id = escapeSimple($res_id);
+
 		$result = db_query("UPDATE unit_resources SET
 				title = $restitle,
 				comments = $rescomments
@@ -86,15 +90,17 @@ _editor_lang = '$lang_editor';
 } elseif(isset($_REQUEST['del'])) { // delete resource from course unit
 	$res_id = intval($_GET['del']);
 	if ($id = check_admin_unit_resource($res_id)) {
+                $res_id = escapeSimple($res_id);
 		db_query("DELETE FROM unit_resources WHERE id = '$res_id'", $mysqlMainDb);
 		$tool_content .= "<p class='success_small'>$langResourceCourseUnitDeleted</p>";
 	}
 } elseif (isset($_REQUEST['vis'])) { // modify visibility in text resources only 
 	$res_id = intval($_REQUEST['vis']);
 	if ($id = check_admin_unit_resource($res_id)) {
+                $res_id = escapeSimple($res_id);
 		$sql = db_query("SELECT `visibility` FROM unit_resources WHERE id=$res_id");
 		list($vis) = mysql_fetch_row($sql);
-		$newvis = ($vis == 'v')? 'i': 'v';
+                $newvis = ($vis == 'v')? 'i': 'v';
 		db_query("UPDATE unit_resources SET visibility = '$newvis' WHERE id = $res_id");
 	}
 } elseif (isset($_REQUEST['down'])) { // change order down
@@ -116,6 +122,8 @@ if ($is_adminOfCourse) {
 } else {
         $visibility_check = "AND visibility='v'";
 }
+$id = escapeSimple($id);
+$cours_id = escapeSimple($cours_id);
 $q = db_query("SELECT * FROM course_units
                WHERE id = $id AND course_id=$cours_id " . $visibility_check);
 if (!$q or mysql_num_rows($q) == 0) {
@@ -140,6 +148,11 @@ foreach (array('previous', 'next') as $i) {
                 $arrow1 = '';
                 $arrow2 = ' »';
         }
+        $cours_id = escapeSimple($cours_id);
+        $id = escapeSimple($id);
+        $info[order] = escapeSimple($info[order]);
+        $dir = escapeSimple($dir);
+
         $q = db_query("SELECT id, title FROM course_units
                        WHERE course_id = $cours_id
                              AND id <> $id
@@ -193,6 +206,9 @@ $tool_content .= '<form class="unit-select" name="unitselect" action="' .
                  $urlServer . 'modules/units/" method="get">' .
                  '<table align="left"><tbody><tr><th class="left">'.$langCourseUnits.':&nbsp;</th><td>'.
                  '<select class="auth_input" name="id" onChange="document.unitselect.submit();">';
+
+$cours_id = escapeSimple($cours_id);
+
 $q = db_query("SELECT id, title FROM course_units
                WHERE course_id = $cours_id
                      $visibility_check
@@ -218,7 +234,8 @@ draw($tool_content, 2, 'units', $head_content);
 function check_admin_unit_resource($resource_id)
 {
 	global $cours_id, $is_adminOfCourse;
-	
+        $cours_id = escapeSimple($cours_id);
+        $resource_id = escapeSimple($resource_id);
 	if ($is_adminOfCourse) {
 		$q = db_query("SELECT course_units.id FROM course_units,unit_resources WHERE
 			course_units.course_id = $cours_id AND course_units.id = unit_resources.unit_id
@@ -234,7 +251,10 @@ function check_admin_unit_resource($resource_id)
 // Display resources for unit with id=$id
 function show_resources($unit_id)
 {
-	global $tool_content, $max_resource_id;
+        global $tool_content, $max_resource_id;
+        
+        $unit_id = escapeSimple($unit_id);
+
 	$req = db_query("SELECT * FROM unit_resources WHERE unit_id = $unit_id ORDER BY `order`");
 	if (mysql_num_rows($req) > 0) {
 		list($max_resource_id) = mysql_fetch_row(db_query("SELECT id FROM unit_resources
@@ -293,7 +313,8 @@ function show_doc($title, $comments, $resource_id, $file_id)
 {
         global $is_adminOfCourse, $currentCourseID, $langWasDeleted,
                $visibility_check, $urlServer, $id;
-
+        
+        $GLOBALS['currentCourseID'] = escapeSimple($GLOBALS['currentCourseID']);
         $title = htmlspecialchars($title);
         $r = db_query("SELECT * FROM document
 	               WHERE id =" . intval($file_id) ." $visibility_check", $GLOBALS['currentCourseID']);
@@ -348,6 +369,7 @@ function show_lp($title, $comments, $resource_id, $lp_id)
 
 	$comment_box = $class_vis = $imagelink = $link = '';
         $title = htmlspecialchars($title);
+        $lp_id= escapeSimple($lp_id);
 	$r = db_query("SELECT * FROM lp_learnPath WHERE learnPath_id = $lp_id",
                       $currentCourseID);
 	if (mysql_num_rows($r) == 0) { // check if lp was deleted
@@ -383,6 +405,9 @@ function show_lp($title, $comments, $resource_id, $lp_id)
 function show_video($table, $title, $comments, $resource_id, $video_id, $visibility)
 {
         global $is_adminOfCourse, $currentCourseID, $tool_content;
+
+        $table= escapeSimple($table);
+        $video_id= escapeSimple($video_id);
 
         $result = db_query("SELECT * FROM $table WHERE id=$video_id",
                            $currentCourseID);
@@ -423,6 +448,7 @@ function show_work($title, $comments, $resource_id, $work_id, $visibility)
 
 	$comment_box = $class_vis = $imagelink = $link = '';
         $title = htmlspecialchars($title);
+        $work_id= escapeSimple($work_id);
 	$r = db_query("SELECT * FROM assignments WHERE id = $work_id",
                       $currentCourseID);
 	if (mysql_num_rows($r) == 0) { // check if it was deleted
@@ -460,6 +486,7 @@ function show_exercise($title, $comments, $resource_id, $exercise_id, $visibilit
 
 	$comment_box = $class_vis = $imagelink = $link = '';
         $title = htmlspecialchars($title);
+        $exercise_id= escapeSimple($exercise_id);
 	$r = db_query("SELECT * FROM exercices WHERE id = $exercise_id",
                       $currentCourseID);
 	if (mysql_num_rows($r) == 0) { // check if it was deleted
@@ -500,6 +527,7 @@ function show_forum($type, $title, $comments, $resource_id, $ft_id, $visibility)
 		$link = "<a href='${urlServer}modules/phpbb/viewforum.php?forum=$ft_id&amp;unit=$id'>";
                 $forumlink = $link . "$title</a>";
 	} else {
+                $ft_id= escapeSimple($ft_id);
 		$r = db_query("SELECT forum_id FROM topics WHERE topic_id = $ft_id", $currentCourseID);
 		list($forum_id) = mysql_fetch_array($r);
 		$link = "<a href='${urlServer}modules/phpbb/viewtopic.php?topic=$ft_id&amp;forum=$forum_id&amp;unit=$id'>";
@@ -526,6 +554,7 @@ function show_wiki($title, $comments, $resource_id, $wiki_id, $visibility)
 	$comment_box = $imagelink = $link = $class_vis = '';
 	$class_vis = ($visibility == 'i')? ' class="invisible"': '';
         $title = htmlspecialchars($title);
+        $wiki_id= escapeSimple($wiki_id);
 	$r = db_query("SELECT * FROM wiki_properties WHERE id = $wiki_id",
                       $currentCourseID);
 	if (mysql_num_rows($r) == 0) { // check if it was deleted
@@ -610,7 +639,7 @@ function actions($res_type, $resource_id, $status)
 function edit_res($resource_id) 
 {
 	global $tool_content, $id, $urlServer, $langTitle, $langDescr, $langContents, $langModify;
-	 
+	$resource_id= escapeSimple($resource_id); 
         $sql = db_query("SELECT id, title, comments, type FROM unit_resources WHERE id='$resource_id'");
         $ru = mysql_fetch_array($sql);
         $restitle = " value='" . htmlspecialchars($ru['title'], ENT_QUOTES) . "'";

@@ -58,6 +58,10 @@ function confirmation ()
 </script>
 ';
 
+
+$uid = escapeSimple($uid);
+$currentCourse = escapeSimple($currentCourse);
+
 //For statistics: record login
 $sql_log = "INSERT INTO logins SET user_id='$uid', ip='$REMOTE_ADDR', date_time=NOW()";
 db_query($sql_log, $currentCourse);
@@ -99,16 +103,26 @@ if (!empty($addon)) {
 	$main_content .= "\n      <div class='course_info'><h1>$langCourseAddon</h1><p>$addon</p></div>";
 }
 
+$cours_id = escapeSimple($cours_id);
+
 $result = db_query("SELECT MAX(`order`) FROM course_units WHERE course_id = $cours_id");
 list($maxorder) = mysql_fetch_row($result);
 
 // other actions in course unit
 if ($is_adminOfCourse) {
         if (isset($_REQUEST['edit_submit'])) {
-                $title = autoquote($_REQUEST['unittitle']);
-                $descr = autoquote($_REQUEST['unitdescr']);
+                $title = autoquote(escapeSimple($_REQUEST['unittitle']));
+                $descr = autoquote(escapeSimple($_REQUEST['unitdescr']));
                 if (isset($_REQUEST['unit_id'])) { // update course unit
                         $unit_id = intval($_REQUEST['unit_id']);
+                        
+                        $cours_id = escapeSimple($cours_id);
+                        $unit_id = htmlspecialchars($unit_id, ENT_QUOTES);
+                        $title = htmlspecialchars($title, ENT_QUOTES);
+                        $descr = htmlspecialchars($descr, ENT_QUOTES);
+                        $cours_id = htmlspecialchars($cours_id, ENT_QUOTES);
+                        
+
                         $result = db_query("UPDATE course_units SET
                                                    title = $title,
                                                    comments = $descr
@@ -116,6 +130,8 @@ if ($is_adminOfCourse) {
 		        $main_content .= "\n      <p class='success_small'>$langCourseUnitModified</p>";
                 } else { // add new course unit
                         $order = $maxorder + 1;
+                        $cours_id = escapeSimple($cours_id);
+
                         db_query("INSERT INTO course_units SET
                                          title = $title, comments =  $descr,
                                          `order` = $order, course_id = $cours_id");
@@ -130,7 +146,10 @@ if ($is_adminOfCourse) {
 		$id = intval($_REQUEST['vis']);
 		$sql = db_query("SELECT `visibility` FROM course_units WHERE id='$id'");
 		list($vis) = mysql_fetch_row($sql);
-		$newvis = ($vis == 'v')? 'i': 'v';
+                $newvis = ($vis == 'v')? 'i': 'v';
+                $id = htmlspecialchars($id, ENT_QUOTES);
+                $cours_id = escapeSimple($cours_id);
+                $cours_id = htmlspecialchars($cours_id, ENT_QUOTES);
 		db_query("UPDATE course_units SET visibility = '$newvis' WHERE id = $id AND course_id = $cours_id");
 	} elseif (isset($_REQUEST['down'])) {
 		$id = intval($_REQUEST['down']); // change order down
@@ -157,13 +176,16 @@ if ($is_adminOfCourse) {
         $cunits_content .= "</h3>";
         $cunits_content .= "</td>\n      </tr>\n      </thead>\n      </table>\n";
 if ($is_adminOfCourse) {
+        $cours_id = escapeSimple($cours_id);
         list($last_id) = mysql_fetch_row(db_query("SELECT id FROM course_units
                                                    WHERE course_id = $cours_id
                                                    ORDER BY `order` DESC LIMIT 1"));
+        $cours_id = escapeSimple($cours_id);                                           
 	$query = "SELECT id, title, comments, visibility
 		  FROM course_units WHERE course_id = $cours_id
                   ORDER BY `order`";
 } else {
+        $cours_id = escapeSimple($cours_id);
 	$query = "SELECT id, title, comments, visibility
 		  FROM course_units WHERE course_id = $cours_id AND visibility='v'
                   ORDER BY `order`";
@@ -256,6 +278,7 @@ $require_help = TRUE;
 $helpTopic = 'course_home';
 
 if ($is_adminOfCourse) {
+        $cours_id = escapeSimple($cours_id);
 	$sql = "SELECT COUNT(user_id) AS numUsers
 			FROM cours_user
 			WHERE cours_id = $cours_id";

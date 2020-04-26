@@ -193,6 +193,7 @@ function escapeSimple($str)
 
 function escapeSimpleSelect($str)
 {
+	//echo '<script type="text/javascript">alert("'.$str.'");</script>';
 	if (get_magic_quotes_gpc())
 	{
 		return addslashes($str);
@@ -990,9 +991,9 @@ function safe_filename($extension = '')
 {
         $prefix = sprintf('%08x', time()) . randomkeys(4);
         if (empty($extension)) {
-                return $prefix;
+                return md5($prefix);
         } else {
-                return $prefix . '.' . $extension;
+                return md5($prefix) . '.' . $extension;
         }
 }
 

@@ -97,7 +97,7 @@ $dropbox_cnf["sysPath"] = $webDir."courses/".$currentCourseID."/dropbox"; //path
 if (!is_dir($dropbox_cnf["sysPath"])) {
 	mkdir($dropbox_cnf["sysPath"]);
 } 
-	
+$currentCourseID = escapeSimple($currentCourseID);	
 // get dropbox quotas from database
 $d = mysql_fetch_array(db_query("SELECT dropbox_quota FROM `".$mysqlMainDb."`.`cours` WHERE code='$currentCourseID'"));
 $diskQuotaDropbox = $d['dropbox_quota'];
@@ -133,6 +133,9 @@ function getUserNameFromId ($id)  // RH: Mailing: return 'Mailing ' + id
     $mailingId = $id - $dropbox_cnf["mailingIdBase"];
     if ($mailingId > 0) return $dropbox_lang["mailingAsUsername"] . $mailingId;
 
+    $dropbox_cnf["userTbl"] = escapeSimple($dropbox_cnf["userTbl"]);
+    $id = escapeSimple($id);
+
     $sql = "SELECT CONCAT(nom,' ', prenom) AS name
 		FROM `" . $dropbox_cnf["userTbl"] . "` WHERE user_id='" . addslashes($id) . "'";
     $result = db_query($sql, $mysqlMainDb);
@@ -148,6 +151,9 @@ function getLoginFromId ($id)
 {
     global $dropbox_cnf, $dropbox_lang, $mysqlMainDb;
 
+    $dropbox_cnf["userTbl"] = escapeSimple($dropbox_cnf["userTbl"]);
+    $id = escapeSimple($id);
+
     $sql = "SELECT username FROM `" . $dropbox_cnf["userTbl"] . "` WHERE user_id='" . addslashes($id) . "'";
     $result = db_query($sql,$mysqlMainDb);
     $res = mysql_fetch_array($result);
@@ -161,6 +167,10 @@ function getLoginFromId ($id)
 function isCourseMember($id)
 {
     global $dropbox_cnf, $dropbox_lang, $mysqlMainDb;
+
+    $dropbox_cnf["courseUserTbl"] = escapeSimple($dropbox_cnf["courseUserTbl"]);
+    $id = escapeSimple($id);
+    $dropbox_cnf["cid"] = escapeSimple($dropbox_cnf["cid"]);
 
     $sql = "SELECT * FROM `" . $dropbox_cnf["courseUserTbl"] . "`
 		WHERE user_id = '" . addslashes( $id) . "' AND cours_id = '" . $dropbox_cnf["cid"] . "'";
@@ -181,8 +191,13 @@ function isCourseMember($id)
 */
 function removeUnusedFiles()
 {
+
     global $dropbox_cnf, $dropbox_lang, $currentCourseID;
     // select all files that aren't referenced anymore
+
+    $dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+    $dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+
     $sql = "SELECT DISTINCT f.id, f.filename
 			FROM `" . $dropbox_cnf["fileTbl"] . "` f
 			LEFT JOIN `" . $dropbox_cnf["personTbl"] . "` p ON f.id = p.fileId
@@ -216,6 +231,10 @@ function checkUserOwnsThisMailing($mailingPseudoId, $userId)
 
     global $dropbox_cnf, $dropbox_lang, $currentCourseID;
 
+    $dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+    $dropbox_cnf["postTbl"] = escapeSimple($dropbox_cnf["postTbl"]);
+    $mailingPseudoId = escapeSimple($mailingPseudoId);
+
     $sql = "SELECT f.uploaderId FROM `" . $dropbox_cnf["fileTbl"] . "` f
 			LEFT JOIN `" . $dropbox_cnf["postTbl"] . "` p ON f.id = p.fileId
 			WHERE p.recipientId = '" . $mailingPseudoId . "'";
@@ -233,7 +252,11 @@ function removeMoreIfMailing($fileId)
     // if file was posted to a mailing pseudo_id (i.e. delete zip-file)
     // then delete pseudo_id from person table for all content files
 
-	global $dropbox_cnf, $dropbox_lang, $currentCourseID;
+    global $dropbox_cnf, $dropbox_lang, $currentCourseID;
+        
+
+    $dropbox_cnf["postTbl"] = escapeSimple($dropbox_cnf["postTbl"]);
+    $fileId= escapeSimple($fileId);
 
     $sql = "SELECT p.recipientId FROM `" . $dropbox_cnf["postTbl"] . "` p
 		WHERE p.fileId = '" . $fileId . "'";

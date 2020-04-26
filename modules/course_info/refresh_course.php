@@ -129,6 +129,7 @@ draw($tool_content, 2, 'course_info');
 function delete_users() {
 	global $cours_id, $langUsersDeleted;
 
+	$cours_id = escapeSimple($cours_id);
 	db_query("DELETE FROM cours_user WHERE cours_id = $cours_id and statut <> '1'");
 	return "<p>$langUsersDeleted</p>";
 }
@@ -136,6 +137,7 @@ function delete_users() {
 function delete_announcements() {
 	global $cours_id, $langAnnDeleted;
 
+	$cours_id = escapeSimple($cours_id);
 	db_query("DELETE FROM annonces WHERE cours_id = $cours_id");
 	return "<p>$langAnnDeleted</p>";
 }
@@ -146,6 +148,9 @@ function delete_agenda() {
 	db_query("DELETE FROM agenda");
 
 	##[BEGIN personalisation modification]############
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$currentCourseID = escapeSimple($currentCourseID);
+
 	db_query("DELETE FROM ".$mysqlMainDb.".agenda WHERE lesson_code='$currentCourseID'");
 	##[END personalisation modification]############
 	return "<p>$langAgendaDeleted</p>";

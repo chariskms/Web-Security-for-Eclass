@@ -43,6 +43,7 @@ if (!isset($doit) or $doit != "yes") {
 		draw($tool_content,1);
 		exit;
 	} else {
+		$uid = escapeSimple($uid);
 		$q = db_query ("SELECT code FROM cours, cours_user WHERE cours.cours_id = cours_user.cours_id AND user_id = '$uid' LIMIT 1") ;
 		if (mysql_num_rows($q) == 0) {
 			$tool_content .=  "<p><b>$langConfirm</b></p>";
@@ -65,6 +66,7 @@ if (!isset($doit) or $doit != "yes") {
 		$tool_content .=  "<table width=99%><tbody>";
 		$tool_content .=  "<tr>";
 		$tool_content .=  "<td class=\"success\">";
+		$uid = escapeSimple($uid);
 		db_query("DELETE from user WHERE user_id = '$uid'");
 		if (mysql_affected_rows() > 0) {
 			$tool_content .=  "<p><b>$langDelSuccess</b></p>";

@@ -47,6 +47,10 @@ $passurl = $urlSecure.'modules/profile/password.php';
 
 if (isset($submit) && isset($changePass) && ($changePass == "do")) {
 
+	$_REQUEST['password_form'] = htmlspecialchars($_REQUEST['password_form'], ENT_QUOTES);
+	$_REQUEST['password_form1'] = htmlspecialchars($_REQUEST['password_form1'], ENT_QUOTES);
+	$_REQUEST['old_pass'] = htmlspecialchars($_REQUEST['old_pass'], ENT_QUOTES);
+
 	if (empty($_REQUEST['password_form']) || empty($_REQUEST['password_form1']) || empty($_REQUEST['old_pass'])) {
 		header("location:". $passurl."?msg=3");
 		exit();
@@ -57,11 +61,26 @@ if (isset($submit) && isset($changePass) && ($changePass == "do")) {
 		exit();
 	}
 
-	// check if passwd is too easy
-	$sql = "SELECT `nom`,`prenom` ,`username`,`email`,`am` FROM `user`WHERE `user_id`=".$_SESSION["uid"]." ";
-	$result = db_query($sql, $mysqlMainDb);
-	$myrow = mysql_fetch_array($result);
+	//check if passwd is too easy
+	// $sql = "SELECT `nom`,`prenom` ,`username`,`email`,`am` FROM `user`WHERE `user_id`=".$_SESSION["uid"]." ";
+	// $result = db_query($sql, $mysqlMainDb);
+	// $myrow = mysql_fetch_array($result);
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+	$sessuid = $_SESSION["uid"];
+	$sql = $pdodb->prepare("SELECT `nom`,`prenom` ,`username`,`email`,`am` FROM `user` WHERE `user_id`=? ");
+	$sql -> bindParam(1, $sessuid);
+	$sql -> execute();
+	echo '<script type="text/javascript">alert("1");</script>';
+	$myrow = $sql->fetch(PDO::FETCH_ASSOC);
 
+	// while ($myrow = $sql->fetch(PDO::FETCH_ASSOC)){
+	// 	$nom = $myrow[0];
+	// 	$prenom = $myrow[1];
+	// 	$username = $myrow[2];
+	// 	$email = $myrow[3];
+	// 	$am = $myrow[4];
+	// }
+	echo '<script type="text/javascript">alert("'.$myrow['username'].'");</script>';
 	if ((strtoupper($_REQUEST['password_form1']) == strtoupper($myrow['nom']))
 	|| (strtoupper($_REQUEST['password_form1']) == strtoupper($myrow['prenom']))
 	|| (strtoupper($_REQUEST['password_form1']) == strtoupper($myrow['username']))
@@ -70,11 +89,18 @@ if (isset($submit) && isset($changePass) && ($changePass == "do")) {
 		header("location:". $passurl."?msg=2");
 		exit();
 	}
-
+	//echo '<script type="text/javascript">alert("eeela0");</script>';
 	//all checks ok. Change password!
-	$sql = "SELECT `password` FROM `user` WHERE `user_id`=".$_SESSION["uid"]." ";
-	$result = db_query($sql, $mysqlMainDb);
-	$myrow = mysql_fetch_array($result);
+	// $sql = "SELECT `password` FROM `user` WHERE `user_id`=".$_SESSION["uid"]." ";
+	// $result = db_query($sql, $mysqlMainDb);
+	// $myrow = mysql_fetch_array($result);	
+	$sql = $pdodb -> prepare("SELECT `password` FROM `user` WHERE `user_id`=?");
+	$sessuid = $_SESSION["uid"];
+	$sql -> bindParam(1, $sessuid);
+	//echo '<script type="text/javascript">alert("eeela");</script>';
+	$sql -> execute();
+	$myrow = $sql->fetch(PDO::FETCH_ASSOC);
+	//echo '<script type="text/javascript">alert("'.$myrow['password'].'");</script>';
 
 	$old_pass = md5($_REQUEST['old_pass']) ;
 	$old_pass_db = $myrow['password'];
@@ -82,10 +108,17 @@ if (isset($submit) && isset($changePass) && ($changePass == "do")) {
 
 	if($old_pass == $old_pass_db) {
 
-		$sql = "UPDATE `user` SET `password` = '$new_pass' WHERE `user_id` = ".$_SESSION["uid"]."";
-		db_query($sql, $mysqlMainDb);
-		header("location:". $passurl."?msg=4");
-		exit();
+		if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		
+			$sql = $pdodb -> prepare("UPDATE `user` SET `password` = ? WHERE `user_id`= ?");
+			$sql -> bindParam(1, $new_pass);
+			$sessuid = $_SESSION["uid"];
+			$sql -> bindParam(2, $sessuid);
+			$sql -> execute();
+
+			header("location:". $passurl."?msg=4");
+			exit();
+		}
 	} else {
 		header("location:". $passurl."?msg=5");
 		exit();
@@ -147,6 +180,7 @@ if(isset($msg)) {
 }
 
 if (!isset($changePass)) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "
 <form method=\"post\" action=\"$passurl?submit=yes&changePass=do\">
   <table width=\"99%\">
@@ -166,7 +200,8 @@ if (!isset($changePass)) {
      <td><input class='FormData_InputText' type=\"password\" size=\"40\" name=\"password_form1\" value=\"\"></td>
     </tr>
 	<tr>
-      <th>&nbsp;</th>
+	  <th>&nbsp;</th>
+	  <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
       <td><input type=\"Submit\" name=\"submit\" value=\"$langModify\"></td>
     </tr>
 	</tbody>

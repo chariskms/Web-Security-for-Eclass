@@ -35,6 +35,7 @@ $tool_content = "";
 
 // security check
 if (isset($_POST['localize'])) {
+    $_POST['localize'] = htmlspecialchars($_POST['localize'], ENT_QUOTES);
 	$language = preg_replace('/[^a-z]/', '', $_POST['localize']);
 }
 
@@ -120,11 +121,23 @@ $registration_errors = array();
     if (empty($nom_form) or empty($prenom_form) or empty($userphone)
 	 or empty($usercomment) or empty($uname) or (empty($email_form))) {
       $registration_errors[]=$langEmptyFields;
-	   }
+     }
+
+    else{
+      $email_form = htmlspecialchars($email_form);
+      $userphone = htmlspecialchars($userphone);
+      $nom_form = htmlspecialchars($nom_form);
+      $prenom_form = htmlspecialchars($prenom_form);
+      $uname = htmlspecialchars($uname);
+      $usercomment = htmlspecialchars($usercomment);
+    }
+
+
 
     if (count($registration_errors) == 0) {    // registration is ok
             // ------------------- Update table prof_request ------------------------------
             $auth = $_POST['auth'];
+            $auth = htmlspecialchars($auth, ENT_QUOTES);
             if($auth != 1) {
                     switch($auth) {
                             case '2': $password = "pop3";
@@ -140,19 +153,58 @@ $registration_errors = array();
                     }
             }
 
-            db_query('INSERT INTO prof_request SET
-                                profname = ' . autoquote($prenom_form). ',
-                                profsurname = ' . autoquote($nom_form). ',
-                                profuname = ' . autoquote($uname). ',
-                                profemail = ' . autoquote($email_form). ',
-                                proftmima = ' . autoquote($department). ',
-                                profcomm = ' . autoquote($userphone). ',
-                                status = 1,
-                                statut = 1,
-                                date_open = NOW(),
-                                comment = ' . autoquote($usercomment). ',
-                                lang = ' . autoquote($proflang),
-                     $mysqlMainDb);
+            $pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+            $ql= $pdodb->prepare("INSERT INTO prof_request SET
+            profname = ?,
+            profsurname = ?,
+            profuname = ?,
+            profemail = ?,
+            proftmima = ?,
+            profcomm = ?,
+            status = ?,
+            statut = ?,
+            date_open = NOW(),
+            comment = ?,
+            lang = ?");	
+
+            $prenom_form2 = autoquote($prenom_form);
+            $profsurname2 = autoquote($nom_form);
+            $profuname2 = autoquote($uname);
+            $profemail2 = autoquote($email_form);
+            $proftmima2 = autoquote($department);
+            $profcomm2 = autoquote($userphone);
+            $status2 = 1;
+            $statut2 = 1;
+            $comment2 = autoquote($usercomment);
+            $lang2 = autoquote($proflang);
+            
+            $ql->bindParam(1, $prenom_form2);
+            $ql->bindParam(2, $profsurname2);
+            $ql->bindParam(3, $profuname2);
+            $ql->bindParam(4, $profemail2);
+            $ql->bindParam(5, $proftmima2);
+            $ql->bindParam(6, $profcomm2);
+            $ql->bindParam(7, $status2);
+            $ql->bindParam(8, $statut2);
+            $ql->bindParam(9, $comment2);
+            $ql->bindParam(10, $lang2);
+              
+            $ql->execute();
+            //$last_id = $pdodb->lastInsertId();
+
+            // db_query('INSERT INTO prof_request SET
+            //                     profname = ' . autoquote($prenom_form). ',
+            //                     profsurname = ' . autoquote($nom_form). ',
+            //                     profuname = ' . autoquote($uname). ',
+            //                     profemail = ' . autoquote($email_form). ',
+            //                     proftmima = ' . autoquote($department). ',
+            //                     profcomm = ' . autoquote($userphone). ',
+            //                     status = 1,
+            //                     statut = 1,
+            //                     date_open = NOW(),
+            //                     comment = ' . autoquote($usercomment). ',
+            //                     lang = ' . autoquote($proflang),
+            //          $mysqlMainDb);
 
             //----------------------------- Email Message --------------------------
             $MailMessage = $mailbody1 . $mailbody2 . "$prenom_form $nom_form\n\n" . $mailbody3 .
@@ -189,6 +241,12 @@ $registration_errors = array();
                 foreach ($registration_errors as $error) {
                         $tool_content .= "<p>$error</p>";
                 }
+           $_POST['prenom_form'] = htmlspecialchars($_POST['prenom_form'], ENT_QUOTES);
+           $_POST['nom_form'] = htmlspecialchars($_POST['nom_form'], ENT_QUOTES);
+           $_POST['userphone'] = htmlspecialchars($_POST['userphone'], ENT_QUOTES);
+           $_POST['uname'] = htmlspecialchars($_POST['uname'], ENT_QUOTES);
+           $_POST['email_form'] = htmlspecialchars($_POST['email_form'], ENT_QUOTES);
+           $_POST['usercomment'] = htmlspecialchars($_POST['usercomment'], ENT_QUOTES);
 	       $tool_content .= "<p><a href='$_SERVER[PHP_SELF]?prenom_form=$_POST[prenom_form]&amp;nom_form=$_POST[nom_form]&amp;userphone=$_POST[userphone]&amp;uname=$_POST[uname]&amp;email_form=$_POST[email_form]&amp;usercomment=$_POST[usercomment]'>$langAgain</a></p>" .
                 "</td></tr></tbody></table><br /><br />";
 	}

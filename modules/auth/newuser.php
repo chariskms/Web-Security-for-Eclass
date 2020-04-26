@@ -143,6 +143,16 @@ if (!isset($submit)) {
 			$registration_errors[] = $langUserFree;
 		}
 	}
+	
+	$email = htmlspecialchars($email, ENT_QUOTES);
+	$password = htmlspecialchars($password, ENT_QUOTES);
+	$password1 = htmlspecialchars($password1, ENT_QUOTES);
+	$nom_form = htmlspecialchars($nom_form, ENT_QUOTES);
+	$prenom_form = htmlspecialchars($prenom_form, ENT_QUOTES);
+	$uname = htmlspecialchars($uname, ENT_QUOTES);
+	$am = htmlspecialchars($am, ENT_QUOTES);
+
+
 	if (!empty($email) and !email_seems_valid($email)) {
 		$registration_errors[] = $langEmailWrong;
 	}
@@ -197,20 +207,72 @@ if (!isset($submit)) {
 	} else {
 		$password_encrypted = $password;
 	}
-	$q1 = "INSERT INTO `$mysqlMainDb`.user
-	(user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)
-	VALUES ('NULL', '$nom_form', '$prenom_form', '$uname', '$password_encrypted', '$email','5',
-		'$department','$am',".$registered_at.",".$expires_at.",'$lang')";
-	$inscr_user = mysql_query($q1);
-	$last_id = mysql_insert_id();
-	$result=mysql_query("SELECT user_id, nom, prenom FROM `$mysqlMainDb`.user WHERE user_id='$last_id'");
-	while ($myrow = mysql_fetch_array($result)) {
+
+
+
+
+	// $q1 = "INSERT INTO `$mysqlMainDb`.user
+	// (user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)
+	// VALUES ('NULL', '$nom_form', '$prenom_form', '$uname', '$password_encrypted', '$email','5',
+	// 	'$department','$am',".$registered_at.",".$expires_at.",'$lang')";
+	// $inscr_user = mysql_query($q1);
+	// $last_id = mysql_insert_id();
+	// $result=mysql_query("SELECT user_id, nom, prenom FROM `$mysqlMainDb`.user WHERE user_id='$last_id'");
+	// while ($myrow = mysql_fetch_array($result)) {
+	// 	$uid=$myrow[0];
+	// 	$nom=$myrow[1];
+	// 	$prenom=$myrow[2];
+	// }
+
+
+    //
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+	$ql= $pdodb->prepare("INSERT INTO user(user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)	
+	VALUES (? , ?, ?, ?, ?, ?,?,?,?,?,?,?)");	
+	//VALUES (?, ?, '$prenom_form', '$uname', '$password_encrypted', '$email',?,
+	//'$department','$am',".$registered_at.",".$expires_at.",'$lang')");
+		//echo '<script type="text/javascript">alert("1");</script>';	
+		$nulvar = null;
+		$var5 = 5;
+	//bindValue(':user_id', $nulvar, PDO::PARAM_INT);	
+			$ql->bindParam(1, $nulvar);
+			$ql->bindParam(2, $nom_form);
+			$ql->bindParam(3, $prenom_form);
+			$ql->bindParam(4, $uname);
+			$ql->bindParam(5, $password_encrypted);
+		    $ql->bindParam(6, $email);
+			$ql->bindParam(7, $var5);
+			$ql->bindParam(8, $department);
+			$ql->bindParam(9, $am);
+			$ql->bindParam(10, $registered_at);
+			$ql->bindParam(11, $expires_at);
+			$ql->bindParam(12, $lang);
+		
+	$ql->execute();
+	$last_id = $pdodb->lastInsertId();
+	//$inscr_user = 10;
+
+	$ql= $pdodb->prepare("SELECT user_id, nom, prenom FROM user WHERE user_id=?");
+	$ql->bindParam(1, $last_id);
+	$ql->execute();
+	while ($myrow = $ql->fetch(PDO::FETCH_ASSOC)) {
 		$uid=$myrow[0];
 		$nom=$myrow[1];
 		$prenom=$myrow[2];
 	}
-	mysql_query("INSERT INTO `$mysqlMainDb`.loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
-	VALUES ('', '".$uid."', '".$REMOTE_ADDR."', NOW(), 'LOGIN')");
+	
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+
+	$sql = $pdodb->prepare("INSERT INTO loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
+	VALUES ('', ?, ?, NOW(), 'LOGIN')");
+
+	$sql->bindParam(1,$uid);
+	$sql->bindParam(2,$REMOTE_ADDR);
+
+	$sql->execute();
+
+	// mysql_query("INSERT INTO `$mysqlMainDb`.loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
+	// VALUES ('', '".$uid."', '".$REMOTE_ADDR."', NOW(), 'LOGIN')");
 	$_SESSION['uid'] = $uid;
 	$_SESSION['statut'] = 5;
 	$_SESSION['prenom'] = $prenom;

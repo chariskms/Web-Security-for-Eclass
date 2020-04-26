@@ -74,7 +74,16 @@ hContent;
 include_once("./config.php");
 include("functions.php");
 
+
+$forum = escapeSimple($forum);
+$topic = escapeSimple($topic);
+
+
 if (isset($post_id) && $post_id) {
+
+	$post_id = escapeSimple($post_id);
+
+
 	// We have a post id, so include that in the checks..
 	$sql  = "SELECT f.forum_type, f.forum_name, f.forum_access, t.topic_title ";
 	$sql .= "FROM forums f, topics t, posts p ";
@@ -109,114 +118,194 @@ if (!does_exists($forum, $currentCourseID, "forum") || !does_exists($topic, $cur
 	exit();
 }
 
-if (isset($submit) && $submit) {
-	if (trim($message) == '') {
-		$tool_content .= $langEmptyMsg;
-		draw($tool_content, 2, 'phpbb', $head_content);
-		exit();
-	}
-	if (isset($user_level) && $user_level == -1) {
-		$tool_content .= $luserremoved;
-		draw($tool_content, 2, 'phpbb', $head_content);
-		exit();
-	}
-	if ($forum_access == 3 && $user_level < 2) {
-		$tool_content .= $langNoPost;
-		draw($tool_content, 2, 'phpbb', $head_content);
-		exit();
-	}
-	// XXX: Do we need this code ?
-	if ( $uid == -1 ) {
+if (isset($submit) && $submit){
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+	
+		if (trim($message) == '') {
+			$tool_content .= $langEmptyMsg;
+			draw($tool_content, 2, 'phpbb', $head_content);
+			exit();
+		}
+
+		$message = htmlspecialchars($message, ENT_QUOTES);
+		
+		if (isset($user_level) && $user_level == -1) {
+			$tool_content .= $luserremoved;
+			draw($tool_content, 2, 'phpbb', $head_content);
+			exit();
+		}
 		if ($forum_access == 3 && $user_level < 2) {
 			$tool_content .= $langNoPost;
 			draw($tool_content, 2, 'phpbb', $head_content);
 			exit();
 		}
-	}
-	// Either valid user/pass, or valid session. continue with post.. but first:
-	// Check that, if this is a private forum, the current user can post here.
-	if ($forum_type == 1) {
-		if (!check_priv_forum_auth($uid, $forum, TRUE, $currentCourseID)) {
-			$tool_content .= "$langPrivateForum $langNoPost";
+		// XXX: Do we need this code ?
+		if ( $uid == -1 ) {
+			if ($forum_access == 3 && $user_level < 2) {
+				$tool_content .= $langNoPost;
+				draw($tool_content, 2, 'phpbb', $head_content);
+				exit();
+			}
+		}
+		// Either valid user/pass, or valid session. continue with post.. but first:
+		// Check that, if this is a private forum, the current user can post here.
+		if ($forum_type == 1) {
+			if (!check_priv_forum_auth($uid, $forum, TRUE, $currentCourseID)) {
+				$tool_content .= "$langPrivateForum $langNoPost";
+				draw($tool_content, 2, 'phpbb', $head_content);
+				exit();
+			}
+		}
+		$poster_ip = $REMOTE_ADDR;
+		$is_html_disabled = false;
+		if ( (isset($allow_html) && $allow_html == 0) || isset($html)) {
+			$message = htmlspecialchars($message);
+			$is_html_disabled = true;
+			if (isset($quote) && $quote) {
+				$edit_by = get_syslang_string($sys_lang, "l_editedby");
+				// If it's been edited more than once, there might be old "edited by" strings with
+				// escaped HTML code in them. We want to fix this up right here:
+				$message = preg_replace("#&lt;font\ size\=-1&gt;\[\ $edit_by(.*?)\ \]&lt;/font&gt;#si", '[ ' . $edit_by . '\1 ]', $message);
+			}
+		}
+		if ( (isset($allow_bbcode) && $allow_bbcode == 1) && !isset($bbcode)) {
+			$message = bbencode($message, $is_html_disabled);
+		}
+
+		$message = format_message($message);
+		$time = date("Y-m-d H:i");
+		$nom = addslashes($nom);
+		$prenom = addslashes($prenom);
+
+		//to prevent [addsig] from getting in the way, let's put the sig insert down here.
+		if (isset($sig) && $sig) {
+			$message .= "\n[addsig]";
+		}
+
+
+		$pdoReplyCourse = new PDO("mysql:host=$mysqlServer;dbname=$currentCourseID",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+
+		$sql = $pdoReplyCourse -> prepare("INSERT INTO posts (topic_id, forum_id, poster_id, post_time, poster_ip, nom, prenom)
+		VALUES (?, ?, ?, ?, ?, ?, ?)");
+
+		$sql->bindParam(1, $topic);
+		$sql->bindParam(2, $forum);
+		$sql->bindParam(3, $uid);
+		$sql->bindParam(4, $time);
+		$sql->bindParam(5, $poster_ip);
+		$sql->bindParam(6, $nom);
+		$sql->bindParam(7, $prenom);
+		$result = $sql->execute(); 
+
+		$this_post = $pdoReplyCourse->lastInsertId();
+
+		// $sql = "INSERT INTO posts (topic_id, forum_id, poster_id, post_time, poster_ip, nom, prenom)
+		// 		VALUES ('$topic', '$forum', '$uid','$time', '$poster_ip', '$nom', '$prenom')";
+		// $result = db_query($sql, $currentCourseID);
+		//$this_post = mysql_insert_id();
+
+
+		if ($this_post) {
+
+			$sql = $pdoReplyCourse -> prepare("INSERT INTO posts_text (post_id, post_text) VALUES (?, ?)");
+
+			$message = str_replace("&lt;p&gt;", "<p>", $message);
+			$message = str_replace("&lt;/p&gt;", "</p>", $message); 
+			$message = str_replace("&lt;br /&gt;", "<br />", $message);
+
+			$temp0 = autoquote($message);
+			$sql->bindParam(1, $this_post);
+			$sql->bindParam(2, $temp0);
+
+			$result = $sql->execute(); 
+
+			// $sql = "INSERT INTO posts_text (post_id, post_text) VALUES ($this_post, " .
+			//                 autoquote($message) . ")";
+			// $result = db_query($sql, $currentCourseID); 
+		}
+
+		$sql = $pdoReplyCourse -> prepare("UPDATE topics SET topic_replies = topic_replies+1, topic_last_post_id = ?, topic_time = ? 
+		WHERE topic_id = ?");
+
+		$sql->bindParam(1, $this_post);
+		$sql->bindParam(2, $time);
+		$sql->bindParam(3, $topic);
+
+		$result = $sql->execute();
+		
+		// $sql = "UPDATE topics SET topic_replies = topic_replies+1, topic_last_post_id = $this_post, topic_time = '$time' 
+		// 	WHERE topic_id = '$topic'";
+		// $result = db_query($sql, $currentCourseID);
+
+		$sql = $pdoReplyCourse -> prepare("UPDATE forums SET forum_posts = forum_posts+1, forum_last_post_id = ?
+		WHERE forum_id = ?");
+
+		$sql->bindParam(1, $this_post);
+		$sql->bindParam(2, $forum);
+
+		$result = $sql->execute();
+
+		// $sql = "UPDATE forums SET forum_posts = forum_posts+1, forum_last_post_id = '$this_post' 
+		// 	WHERE forum_id = '$forum'";
+		// $result = db_query($sql, $currentCourseID);
+
+
+		if (!$result) {
+			$tool_content .= $langErrorUpadatePostCount;
 			draw($tool_content, 2, 'phpbb', $head_content);
 			exit();
 		}
-	}
-	$poster_ip = $REMOTE_ADDR;
-	$is_html_disabled = false;
-	if ( (isset($allow_html) && $allow_html == 0) || isset($html)) {
-		$message = htmlspecialchars($message);
-		$is_html_disabled = true;
-		if (isset($quote) && $quote) {
-			$edit_by = get_syslang_string($sys_lang, "l_editedby");
-			// If it's been edited more than once, there might be old "edited by" strings with
-			// escaped HTML code in them. We want to fix this up right here:
-			$message = preg_replace("#&lt;font\ size\=-1&gt;\[\ $edit_by(.*?)\ \]&lt;/font&gt;#si", '[ ' . $edit_by . '\1 ]', $message);
-		}
-	}
-	if ( (isset($allow_bbcode) && $allow_bbcode == 1) && !isset($bbcode)) {
-		$message = bbencode($message, $is_html_disabled);
-	}
-	$message = format_message($message);
-	$time = date("Y-m-d H:i");
-	$nom = addslashes($nom);
-	$prenom = addslashes($prenom);
+		
+		// --------------------------------
+		// notify users 
+		// --------------------------------
+		$subject_notify = "$logo - $langSubjectNotify";
+		$category_id = forum_category($forum);
+		$cat_name = category_name($category_id);
 
-	//to prevent [addsig] from getting in the way, let's put the sig insert down here.
-	if (isset($sig) && $sig) {
-		$message .= "\n[addsig]";
+
+		$pdoReplyMain = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+
+		$sql = $pdoReplyMain -> prepare("SELECT DISTINCT user_id FROM forum_notify 
+		WHERE (topic_id = ? OR forum_id = ? OR cat_id = ? ) 
+		AND notify_sent = ? AND course_id = ? ");
+
+		$one = 1;
+		$sql->bindParam(1, $topic);
+		$sql->bindParam(2, $forum);
+		$sql->bindParam(3, $category_id);
+		$sql->bindParam(4, $one);
+		$sql->bindParam(5, $cours_id);
+
+		$result = $sql->execute();
+
+		// $sql = db_query("SELECT DISTINCT user_id FROM forum_notify 
+		// 		WHERE (topic_id = $topic OR forum_id = $forum OR cat_id = $category_id) 
+		// 		AND notify_sent = 1 AND course_id = $cours_id", $mysqlMainDb);
+
+
+		$c = course_code_to_title($currentCourseID);
+		$body_topic_notify = "$langCourse: '$c'\n\n$langBodyTopicNotify $langInForum '$topic_title' $langOfForum '$forum_name' $langInCat '$cat_name' \n\n$gunet";
+		while ($r = $sql->fetch(PDO::FETCH_ASSOC)) {
+			$emailaddr = uid_to_email($r['user_id']);
+			send_mail('', '', '', $emailaddr, $subject_notify, $body_topic_notify, $charset);
+		}
+		// end of notification
+		
+		$total_forum = get_total_topics($forum, $currentCourseID);
+		$total_topic = get_total_posts($topic, $currentCourseID, "topic")-1;
+		// Subtract 1 because we want the nr of replies, not the nr of posts.
+		$forward = 1;
+		$tool_content .= "<div id=\"operations_container\">
+		<ul id=\"opslist\">
+		<li><a href=\"viewtopic.php?topic=$topic&forum=$forum&$total_topic\">$langViewMessage</a></li>
+		<li><a href=\"viewforum.php?forum=$forum&$total_forum\">$langReturnTopic</a></li>
+		</ul></div><br />";
+		
+		$tool_content .= "<table width=\"99%\"><tbody><tr>
+		<td class=\"success\">$langStored</td>
+		</tr></tbody></table>";
 	}
-	$sql = "INSERT INTO posts (topic_id, forum_id, poster_id, post_time, poster_ip, nom, prenom)
-			VALUES ('$topic', '$forum', '$uid','$time', '$poster_ip', '$nom', '$prenom')";
-	$result = db_query($sql, $currentCourseID);
-	$this_post = mysql_insert_id();
-	if ($this_post) {
-		$sql = "INSERT INTO posts_text (post_id, post_text) VALUES ($this_post, " .
-                        autoquote($message) . ")";
-		$result = db_query($sql, $currentCourseID); 
-	}
-	$sql = "UPDATE topics SET topic_replies = topic_replies+1, topic_last_post_id = $this_post, topic_time = '$time' 
-		WHERE topic_id = '$topic'";
-	$result = db_query($sql, $currentCourseID);
-	$sql = "UPDATE forums SET forum_posts = forum_posts+1, forum_last_post_id = '$this_post' 
-		WHERE forum_id = '$forum'";
-	$result = db_query($sql, $currentCourseID);
-	if (!$result) {
-		$tool_content .= $langErrorUpadatePostCount;
-		draw($tool_content, 2, 'phpbb', $head_content);
-		exit();
-	}
-	
-	// --------------------------------
-	// notify users 
-	// --------------------------------
-	$subject_notify = "$logo - $langSubjectNotify";
-	$category_id = forum_category($forum);
-	$cat_name = category_name($category_id);
-	$sql = db_query("SELECT DISTINCT user_id FROM forum_notify 
-			WHERE (topic_id = $topic OR forum_id = $forum OR cat_id = $category_id) 
-			AND notify_sent = 1 AND course_id = $cours_id", $mysqlMainDb);
-	$c = course_code_to_title($currentCourseID);
-	$body_topic_notify = "$langCourse: '$c'\n\n$langBodyTopicNotify $langInForum '$topic_title' $langOfForum '$forum_name' $langInCat '$cat_name' \n\n$gunet";
-	while ($r = mysql_fetch_array($sql)) {
-		$emailaddr = uid_to_email($r['user_id']);
-		send_mail('', '', '', $emailaddr, $subject_notify, $body_topic_notify, $charset);
-	}
-	// end of notification
-	 
-	$total_forum = get_total_topics($forum, $currentCourseID);
-	$total_topic = get_total_posts($topic, $currentCourseID, "topic")-1;
-	// Subtract 1 because we want the nr of replies, not the nr of posts.
-	$forward = 1;
-	$tool_content .= "<div id=\"operations_container\">
-	<ul id=\"opslist\">
-	<li><a href=\"viewtopic.php?topic=$topic&forum=$forum&$total_topic\">$langViewMessage</a></li>
-	<li><a href=\"viewforum.php?forum=$forum&$total_forum\">$langReturnTopic</a></li>
-	</ul></div><br />";
-	
-	$tool_content .= "<table width=\"99%\"><tbody><tr>
-	<td class=\"success\">$langStored</td>
-	</tr></tbody></table>";
 } else {
 	// Private forum logic here.
 	if (($forum_type == 1) && !$user_logged_in && !$logging_in) {
@@ -269,6 +358,9 @@ if (isset($submit) && $submit) {
 	<tr>
         <th class=\"left\">$langBodyMessage:";
 	if (isset($quote) && $quote) {
+
+		$post = escapeSimple($post);
+
 		$sql = "SELECT pt.post_text, p.post_time, u.username 
 			FROM posts p, posts_text pt 
 			WHERE p.post_id = '$post' AND pt.post_id = p.post_id";
@@ -294,6 +386,8 @@ if (isset($submit) && $submit) {
 	if (!isset($quote)) {
 		$quote = "";
 	}
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+
 	$tool_content .= "</th><td valign='top'>
 	<table class='xinha_editor'>
 	<tr>
@@ -307,6 +401,7 @@ if (isset($submit) && $submit) {
 	<input type='hidden' name='forum' value='$forum'>
 	<input type='hidden' name='topic' value='$topic'>
 	<input type='hidden' name='quote' value='$quote'>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<input type='submit' name='submit' value='$langSubmit'>&nbsp;
 	<input type='submit' name='cancel' value='$langCancelPost'>
 	</td>

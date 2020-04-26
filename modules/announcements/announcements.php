@@ -125,6 +125,7 @@ function checkrequired(which, entry) {
 </script>
 hContent;
 
+    $cours_id = escapeSimple($cours_id);
     $result = db_query("SELECT count(*) FROM annonces WHERE cours_id = $cours_id", $mysqlMainDb);
     list($announcementNumber) = mysql_fetch_row($result);
     mysql_free_result($result);
@@ -146,6 +147,9 @@ hContent;
     }
 
     if (isset($thisAnnouncementId) && $thisAnnouncementId && isset($sortDirection) && $sortDirection) {
+        $cours_id = escapeSimple($cours_id);
+        $sortDirection = escapeSimple($sortDirection);
+
         $result = db_query("SELECT id, ordre FROM annonces WHERE cours_id = $cours_id
 		ORDER BY ordre $sortDirection", $mysqlMainDb);
 
@@ -153,6 +157,10 @@ hContent;
             if (isset ($thisAnnouncementOrderFound) && $thisAnnouncementOrderFound == true) {
                 $nextAnnouncementId = $announcementId;
                 $nextAnnouncementOrder = $announcementOrder;
+                
+                $nextAnnouncementOrder = escapeSimple($nextAnnouncementOrder);
+                $thisAnnouncementOrder = escapeSimple($thisAnnouncementOrder);
+
                 db_query("UPDATE annonces SET ordre = '$nextAnnouncementOrder' WHERE id = '$thisAnnouncementId'", $mysqlMainDb);
                 db_query("UPDATE annonces SET ordre = '$thisAnnouncementOrder' WHERE id = '$nextAnnouncementId'", $mysqlMainDb);
                 break;
@@ -170,6 +178,8 @@ hContent;
 	--------------------------------------*/
 
     if (isset($delete) && $delete) {
+
+        $delete = escapeSimple($delete);
         $result = db_query("DELETE FROM annonces WHERE id='$delete'", $mysqlMainDb);
         $message = "<p class='success_small'>$langAnnDel</p>";
     }
@@ -179,6 +189,8 @@ hContent;
 	--------------------------------------*/
 
     if (isset($deleteAllAnnouncement) && $deleteAllAnnouncement) {
+
+        $cours_id = escapeSimple($cours_id);
         db_query("DELETE FROM annonces WHERE cours_id = $cours_id", $mysqlMainDb);
         $message = "<p class='success_small'>$langAnnEmpty</p>";
     }
@@ -190,6 +202,8 @@ hContent;
     if (isset($_GET['modify'])) {
         $modify = intval($_GET['modify']);
         // RETRIEVE THE CONTENT OF THE ANNOUNCEMENT TO MODIFY
+
+        $modify = escapeSimple($modify);
         $result = db_query("SELECT * FROM annonces WHERE id='$modify'", $mysqlMainDb);
         $myrow = mysql_fetch_array($result);
 
@@ -206,10 +220,23 @@ hContent;
 
     if (isset($_POST['submitAnnouncement'])) {
         // modify announcement
-        $antitle = autoquote($_POST['antitle']);
-        $newContent = autoquote($_POST['newContent']);
+
+        
+        $antitle = htmlspecialchars($_POST['antitle'], ENT_QUOTES);
+        $newContent = htmlspecialchars($_POST['newContent'], ENT_QUOTES);
+
+        $newContent = str_replace("&lt;p&gt;", "<p>", $newContent);
+        $newContent = str_replace("&lt;/p&gt;", "</p>", $newContent); 
+        $newContent = str_replace("&lt;br /&gt;", "<br />", $newContent);        
+
+        $antitle = autoquote(escapeSimple($antitle));
+        $newContent = autoquote(escapeSimple($newContent));
+
         if ($id) {
             $id = intval($_POST['id']);
+
+            // $newContent = escapeSimple($newContent);
+            // $antitle = escapeSimple($antitle);
             db_query("UPDATE annonces SET contenu = $newContent,
 			title = $antitle, temps = NOW()
 			WHERE id = $id", $mysqlMainDb);
@@ -219,11 +246,16 @@ hContent;
         // add new announcement
         else {
             // DETERMINE THE ORDER OF THE NEW ANNOUNCEMENT
+            $cours_id = escapeSimple($cours_id);
+
             $result = db_query("SELECT MAX(ordre) FROM annonces
 				WHERE cours_id = $cours_id", $mysqlMainDb);
             list($orderMax) = mysql_fetch_row($result);
             $order = $orderMax + 1;
             // INSERT ANNOUNCEMENT
+            // $newContent = escapeSimple($newContent);
+            // $antitle = escapeSimple($antitle);
+
             db_query("INSERT INTO annonces SET contenu = $newContent,
 			title = $antitle, temps = NOW(),
 			cours_id = $cours_id, ordre = $order");
@@ -236,6 +268,8 @@ hContent;
                             autounquote($_POST['newContent']);
             $emailSubject = "$professorMessage ($currentCourseID - $intitule)";
             // Select students email list
+
+            $cours_id = escapeSimple($cours_id);
             $sqlUserOfCourse = "SELECT user.email FROM cours_user, user
                                 WHERE cours_id = $cours_id AND cours_user.user_id = user.user_id";
             $result = db_query($sqlUserOfCourse, $mysqlMainDb);
@@ -371,6 +405,7 @@ hContent;
 	DISPLAY ANNOUNCEMENT LIST
 	--------------------------------------*/
     if ($displayAnnouncementList == true) {
+        $cours_id = escapeSimple($cours_id);
         $result = db_query("SELECT * FROM annonces WHERE cours_id = $cours_id ORDER BY ordre DESC", $mysqlMainDb);
         $iterator = 1;
         $bottomAnnouncement = $announcementNumber = mysql_num_rows($result);
@@ -456,6 +491,7 @@ hContent;
 } // end: teacher only
 // student view
 else {
+    $cours_id = escapeSimple($cours_id);
 	$result = db_query("SELECT * FROM annonces WHERE cours_id = $cours_id
 		ORDER BY ordre DESC", $mysqlMainDb) OR die("DB problem");
 	if (mysql_num_rows($result) > 0) {

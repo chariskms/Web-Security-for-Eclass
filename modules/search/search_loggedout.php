@@ -101,17 +101,59 @@ if(empty($search_terms_title) && empty($search_terms_keywords) && empty($search_
     </div>
     ";
 
+	$search_terms_title = htmlspecialchars($search_terms_title, ENT_QUOTES);
+	$search_terms_keywords = htmlspecialchars($search_terms_keywords, ENT_QUOTES);
+	$search_terms_instructor = htmlspecialchars($search_terms_instructor, ENT_QUOTES);
+	$search_terms_coursecode = htmlspecialchars($search_terms_coursecode, ENT_QUOTES);
+
+
     $k = 0;
     $tbl_content = "";
     while ($mycours = mysql_fetch_array($result))
     {
 		$show_entry = FALSE; //flag gia emfanish apotelesmatwn se mia grammh tou array efoson entopistoun apotelesmata
 
-		if (!empty($search_terms_title)) $show_entry = match_arrays($search_terms_title, $mycours['intitule']);
-		if (!empty($search_terms_keywords)) if($show_entry == FALSE) $show_entry = match_arrays($search_terms_keywords, $mycours['course_keywords']);
-		if (!empty($search_terms_instructor)) if($show_entry == FALSE) $show_entry = match_arrays($search_terms_instructor, $mycours['titulaires']);
-		if (!empty($search_terms_coursecode)) if($show_entry == FALSE) $show_entry = match_arrays($search_terms_coursecode, $mycours['code']);
 
+		if (!empty($search_terms_title)){
+			// if ( !ctype_alnum(str_replace(' .!?;,', '', $search_terms_title)) ){
+			// 	$error = TRUE;
+			// 	echo ($langError = "ERROR");
+			// 	die();
+			// }
+			 $show_entry = match_arrays($search_terms_title, $mycours['intitule']);
+		}
+		if (!empty($search_terms_keywords)) {
+			if($show_entry == FALSE) {
+				// if ( !ctype_alnum(str_replace(' .!?;,', '', $search_terms_keywords)) ){
+				// 	$error = TRUE;
+				// 	echo ($langError = "ERROR");
+				// 	die();
+				// }
+				$show_entry = match_arrays($search_terms_keywords, $mycours['course_keywords']);
+			}
+		}
+
+
+		if (!empty($search_terms_instructor)){ 
+			if($show_entry == FALSE){ 
+				// if ( !ctype_alpha(str_replace(' ,', '', $search_terms_instructor)) ){
+				// 	$error = TRUE;
+				// 	echo ($langError = "ERROR");
+				// 	die();
+				// }
+				$show_entry = match_arrays($search_terms_instructor, $mycours['titulaires']);
+			}
+		}		
+		if (!empty($search_terms_coursecode)){ 
+			if($show_entry == FALSE){ 
+				// if ( !ctype_alnum(str_replace(' ,', '', $search_terms_coursecode)) ){
+				// 	$error = TRUE;
+				// 	echo ($langError = "ERROR");
+				// 	die();
+				// }
+				$show_entry = match_arrays($search_terms_coursecode, $mycours['code']);
+			}
+		}
 		//EMFANISH APOTELESMATOS:
 		//ean to flag $show_entry exei allaxtei se TRUE (ara kapoios apo tous orous anazhthshs entopistike sto
 		//$mycours, emfanise thn eggrafh

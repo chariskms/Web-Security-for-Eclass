@@ -74,74 +74,75 @@ $tool_content = "";
 
 // IF PROF ONLY
 if ($is_adminOfCourse) {
-
+        if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
         // Handle user removal / status change
-        if (isset($_GET['giveAdmin'])) {
-                $new_admin_gid = intval($_GET['giveAdmin']);
-                db_query("UPDATE cours_user SET statut = 1
-                                WHERE user_id = $new_admin_gid AND cours_id = $cours_id", $mysqlMainDb);
-        } elseif (isset($_GET['giveTutor'])) {
-                $new_tutor_gid = intval($_GET['giveTutor']);
-                db_query("UPDATE cours_user SET tutor = 1
-                                WHERE user_id = $new_tutor_gid AND cours_id = $cours_id", $mysqlMainDb);
-                db_query("DELETE FROM user_group WHERE user = $new_tutor_gid", $currentCourseID);
-        } elseif (isset($_GET['removeAdmin'])) {
-                $removed_admin_gid = intval($_GET['removeAdmin']);
-                db_query("UPDATE cours_user SET statut = 5
-                                WHERE user_id <> $uid AND
-                                      user_id = $removed_admin_gid AND
-                                      cours_id = $cours_id", $mysqlMainDb);
-        } elseif (isset($_GET['removeTutor'])) {
-                $removed_tutor_gid = intval($_GET['removeTutor']);
-                db_query("UPDATE cours_user SET tutor = 0
-                                WHERE user_id = $removed_tutor_gid AND
-                                      cours_id = $cours_id", $mysqlMainDb);
-        } elseif (isset($_GET['unregister'])) {
-                $unregister_gid = intval($_GET['unregister']);
-                $unregister_ok = true;
-                // Security: don't remove myself except if there is another prof
-                if ($unregister_gid == $uid) {
-                        $result = db_query("SELECT user_id FROM cours_user
-                                                WHERE cours_id = $cours_id AND
-                                                      statut = 1 AND
-                                                      user_id != $uid
-                                                LIMIT 1", $mysqlMainDb);
-                        if (mysql_num_rows($result) == 0) {
-                                $unregister_ok = false;
+                if (isset($_GET['giveAdmin'])) {
+                        $new_admin_gid = intval($_GET['giveAdmin']);
+                        db_query("UPDATE cours_user SET statut = 1
+                                        WHERE user_id = $new_admin_gid AND cours_id = $cours_id", $mysqlMainDb);
+                } elseif (isset($_GET['giveTutor'])) {
+                        $new_tutor_gid = intval($_GET['giveTutor']);
+                        db_query("UPDATE cours_user SET tutor = 1
+                                        WHERE user_id = $new_tutor_gid AND cours_id = $cours_id", $mysqlMainDb);
+                        db_query("DELETE FROM user_group WHERE user = $new_tutor_gid", $currentCourseID);
+                } elseif (isset($_GET['removeAdmin'])) {
+                        $removed_admin_gid = intval($_GET['removeAdmin']);
+                        db_query("UPDATE cours_user SET statut = 5
+                                        WHERE user_id <> $uid AND
+                                        user_id = $removed_admin_gid AND
+                                        cours_id = $cours_id", $mysqlMainDb);
+                } elseif (isset($_GET['removeTutor'])) {
+                        $removed_tutor_gid = intval($_GET['removeTutor']);
+                        db_query("UPDATE cours_user SET tutor = 0
+                                        WHERE user_id = $removed_tutor_gid AND
+                                        cours_id = $cours_id", $mysqlMainDb);
+                } elseif (isset($_GET['unregister'])) {
+                        $unregister_gid = intval($_GET['unregister']);
+                        $unregister_ok = true;
+                        // Security: don't remove myself except if there is another prof
+                        if ($unregister_gid == $uid) {
+                                $result = db_query("SELECT user_id FROM cours_user
+                                                        WHERE cours_id = $cours_id AND
+                                                        statut = 1 AND
+                                                        user_id != $uid
+                                                        LIMIT 1", $mysqlMainDb);
+                                if (mysql_num_rows($result) == 0) {
+                                        $unregister_ok = false;
+                                }
+                        }
+                        if ($unregister_ok) {
+                                db_query("DELETE FROM cours_user
+                                                WHERE user_id = $unregister_gid AND
+                                                cours_id = $cours_id", $mysqlMainDb);
+                                db_query("DELETE FROM user_group
+                                                WHERE user = $unregister_gid", $currentCourseID);
                         }
                 }
-                if ($unregister_ok) {
-                        db_query("DELETE FROM cours_user
-                                        WHERE user_id = $unregister_gid AND
-                                              cours_id = $cours_id", $mysqlMainDb);
-                        db_query("DELETE FROM user_group
-                                        WHERE user = $unregister_gid", $currentCourseID);
-                }
+
+                // show help link and link to Add new user, search new user and management page of groups
+                $tool_content .= "<table width='99%' align='left' class='Users_Operations'><thead>
+                <tr>
+                <td colspan='3'>&nbsp;<b>$langDumpUser $langCsv:</b>
+                <br />&nbsp;&nbsp;1.&nbsp;<a href='dumpuser2.php'>$langcsvenc2</a>
+                &nbsp;&nbsp;2.&nbsp;<a href='dumpuser2.php?enc=1253'>$langcsvenc1</a>
+                </td>
+                </tr>
+                <tr>
+                <td width='20%'><a href='../group/group.php'><b>$langGroupUserManagement</b></a></td>
+                <td width='15%'><a href='searchuser.php'><b>$langSearchUser</b></a></td>
+                <td><b>$langAdd:</b>&nbsp; <a href='adduser.php'>$langOneUser</a>, <a href='muladduser.php'>$langManyUsers</a>, <a href='guestuser.php'>$langGUser</a>&nbsp;</td>
+                </tr></thead></table>";
+
+                // display number of users
+                $tool_content .= "<table width='99%' class='FormData' style='border: 1px solid #CAC3B5;'>
+                <tbody><tr>
+                <td class='odd'>
+                <p>$langThereAre <b>$teachers</b> $langTeachers, <b>$students</b> $langStudents, <b>$visitors</b> $langVisitors</p>
+                <div align='right'>$langTotal: <b>$countUser</b> $langUsers</div>
+                </td>
+                </tr></tbody>
+                </table><p>&nbsp;</p>";
         }
-
-        // show help link and link to Add new user, search new user and management page of groups
-	$tool_content .= "<table width='99%' align='left' class='Users_Operations'><thead>
-	<tr>
-	<td colspan='3'>&nbsp;<b>$langDumpUser $langCsv:</b>
-	<br />&nbsp;&nbsp;1.&nbsp;<a href='dumpuser2.php'>$langcsvenc2</a>
-	&nbsp;&nbsp;2.&nbsp;<a href='dumpuser2.php?enc=1253'>$langcsvenc1</a>
-	</td>
-	</tr>
-	<tr>
-	<td width='20%'><a href='../group/group.php'><b>$langGroupUserManagement</b></a></td>
-	<td width='15%'><a href='searchuser.php'><b>$langSearchUser</b></a></td>
-	<td><b>$langAdd:</b>&nbsp; <a href='adduser.php'>$langOneUser</a>, <a href='muladduser.php'>$langManyUsers</a>, <a href='guestuser.php'>$langGUser</a>&nbsp;</td>
-	</tr></thead></table>";
-
-	// display number of users
-	$tool_content .= "<table width='99%' class='FormData' style='border: 1px solid #CAC3B5;'>
-	<tbody><tr>
-	<td class='odd'>
-	<p>$langThereAre <b>$teachers</b> $langTeachers, <b>$students</b> $langStudents, <b>$visitors</b> $langVisitors</p>
-	<div align='right'>$langTotal: <b>$countUser</b> $langUsers</div>
-	</td>
-	</tr></tbody>
-	</table><p>&nbsp;</p>";
 
 }
 
@@ -174,12 +175,14 @@ $i = $startList + 1;
 
 // Do not show navigation buttons if less than 50 users
 if ($countUser >= $endList) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "
    <table width='99%' class='NavUser'>
    <thead>
    <tr>
      <td valign='bottom' align='left' width='20%'>
        <form method='post' action='$_SERVER[PHP_SELF]?numbList=begin'>
+	 <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
          <input type='submit' value='<< $langBegin' name='numbering' class='auth_input' />
        </form>
      </td>
@@ -189,6 +192,7 @@ if ($countUser >= $endList) {
 	if ($startList!=0) {
 		$tool_content .= "
        <form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=less'>
+	 <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
          <div align='center'><input type='submit' value='< $langPreced50 $endList' name='numbering' class='auth_input' /></div>
        </form>";
 	}
@@ -196,6 +200,7 @@ if ($countUser >= $endList) {
      </td>
      <td valign='bottom' align='center' width='20%'>
        <form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=all'>
+	 <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
          <div align='center'><input type='submit' value='$langAll' name=numbering class='auth_input' /></div>
        </form>
      </td>
@@ -204,7 +209,8 @@ if ($countUser >= $endList) {
 	// if end of list  or complete listing, do not show "next" button
 	if (!((($countUser-$startList)<=$endList) OR ($endList==2000))) {
 		$tool_content .= "<form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=more'>
-		<div align='center'><input type='submit' value='$langFollow50 $endList >' name=numbering class='auth_input' /></div>
+		<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
+                <div align='center'><input type='submit' value='$langFollow50 $endList >' name=numbering class='auth_input' /></div>
 		</form>";
 	}
 	$tool_content .= "
@@ -212,6 +218,7 @@ if ($countUser >= $endList) {
      <td valign='bottom' width='20%'>
        <div align='right'>
        <form method='post' action='$_SERVER[PHP_SELF]?numbList=final'>
+	 <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
          <input type='submit' value='$langEnd >>' name='numbering' class='auth_input' />
        </form>
        </div>
@@ -333,11 +340,13 @@ $tool_content .= "
 // navigation buttons
 // Do not show navigation buttons if less than 50 users
 if($countUser>=50) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	$tool_content .= "
 	<table width='99%' >
 	<tr>
 	<td valign='bottom' align='left' width='20%'>
-	<form method='post' action='$_SERVER[PHP_SELF]?numbList=begin'>
+        <form method='post' action='$_SERVER[PHP_SELF]?numbList=begin'>
+        <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<input type='submit' value='<< $langBegin' name='numbering' class='auth_input' />
 	</form>
 	</td>
@@ -345,25 +354,29 @@ if($countUser>=50) {
 	
 	if ($startList!=0) {
 		$tool_content .= "
-		<form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=less'>
+                <form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=less'>
+                <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 		<input type='submit' value='< $langPreced50 $endList' name='numbering' class='auth_input' />
 		</form>";
 	}
 	$tool_content .= "</td>
 	<td valign='bottom' align='center' width='20%'>
 	<form method='post' action='".$_SERVER['PHP_SELF']."?startList=$startList&amp;numbList=all'>
-		<input type='submit' value='$langAll' name='numbering' class='auth_input' />
+                <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>                 
+                <input type='submit' value='$langAll' name='numbering' class='auth_input' />
 	</form>
 	</td>
 	<td valign='bottom' align='center' width='20%'>";
 	if (!((( $countUser-$startList ) <= 50) OR ($endList == 2000))) {
-		$tool_content .= "<form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=more'>
+                $tool_content .= "<form method='post' action='$_SERVER[PHP_SELF]?startList=$startList&amp;numbList=more'>
+                <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 		<input type='submit' value='$langFollow50 $endList >' name='numbering' class='auth_input' />
 		</form>";
 	}
 	$tool_content .= "</td>
 	<td valign='bottom' align='right' width='20%'>
-	<form method='post' action='$_SERVER[PHP_SELF]?numbList=final'>
+        <form method='post' action='$_SERVER[PHP_SELF]?numbList=final'>
+        <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<input type='submit' value='$langEnd >>' name='numbering' class='auth_input' />
 	</form>
 	</td></tr></table>";

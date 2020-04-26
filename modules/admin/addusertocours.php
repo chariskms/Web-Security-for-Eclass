@@ -49,7 +49,7 @@ if (isset($search) && ($search=="yes")) {
 	$searchurl = "&search=yes";
 }
 // Register - Unregister students - professors to course
-if (isset($_POST['submit']))  {
+if (isset($_POST['submit'])){
         $regstuds = isset($_POST['regstuds'])? array_map('intval', $_POST['regstuds']): array();
         $regprofs = isset($_POST['regprofs'])? array_map('intval', $_POST['regprofs']): array();
         $reglist = implode(', ', array_merge($regstuds, $regprofs));

@@ -77,6 +77,7 @@ $tool_content .= "<form method='post' name='createform' action='$_SERVER[PHP_SEL
 doImportFromBetaCMSBeforeCourseCreation();
 
 function escape_if_exists($name) {
+		$name = htmlspecialchars($name, ENT_QUOTES);
         if (isset($_POST[$name])) {
                 if (get_magic_quotes_gpc()) {
                 		$tmp = stripslashes($_POST[$name]);
@@ -101,6 +102,9 @@ escape_if_exists('course_addon');
 escape_if_exists('course_keywords');
 escape_if_exists('visit');
 
+
+
+
 $tool_content .= $intitule_html .
                  $faculte_html .
                  $titulaires_html .
@@ -112,7 +116,7 @@ $tool_content .= $intitule_html .
                  $visit_html;
 
 if (isset($_POST['back1']) or !isset($_POST['visit'])) {
-
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
    // display form
 	$tool_content .= "<table width=\"99%\" align='left' class='FormData'>
 	<tbody>
@@ -154,6 +158,7 @@ if (isset($_POST['back1']) or !isset($_POST['visit'])) {
 	$tool_content .= lang_select_options('languageCourse');
 	$tool_content .= "</td><td>&nbsp;</td></tr>
 	<tr><th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td><input type='submit' name='create2' value='$langNextStep >' /><input type='hidden' name='visit' value='true' /></td>
 	<td><p align='right'><small>(*) &nbsp;$langFieldsRequ</small></p></td>
 </tbody>
@@ -192,6 +197,7 @@ if (isset($_POST['back1']) or !isset($_POST['visit'])) {
 	</tr>
 	<tr>
 	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td><input type='submit' name='back1' value='< $langPreviousStep ' />&nbsp;<input type='submit' name='create3' value='$langNextStep >' /></td>
 	</tbody>
 	</table>
@@ -323,6 +329,7 @@ if (isset($_POST['back1']) or !isset($_POST['visit'])) {
 	</tr>
 	<tr>
 	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>	
 	<td width='400'><input type='submit' name='back2' value='< $langPreviousStep '>&nbsp;
 	<input type='submit' name='create_course' value=\"$langFinalize\"></td>
 	<td><p align='right'><small>$langFieldsOptionalNote</small></p></td>
@@ -333,7 +340,7 @@ if (isset($_POST['back1']) or !isset($_POST['visit'])) {
 
 // create the course and the course database
 if (isset($_POST['create_course'])) {
-
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
         $nameTools = $langCourseCreate;
         $facid = intval($faculte);
         $facname = find_faculty_by_id($facid);
@@ -343,19 +350,25 @@ if (isset($_POST['create_course'])) {
         $repertoire = str_replace (' ', '', $repertoire);
 
         $language = langcode_to_name($_POST['languageCourse']);
-        // include_messages
-        include("${webDir}modules/lang/$language/common.inc.php");
-        $extra_messages = "${webDir}/config/$language.inc.php";
-        if (file_exists($extra_messages)) {
-                include $extra_messages;
-        } else {
-                $extra_messages = false;
-        }
-        include("${webDir}modules/lang/$language/messages.inc.php");
-        if ($extra_messages) {
-                include $extra_messages;
-        }
-
+		// include_messages
+		$allowedPages = array('english', 'greek', 'spanish');
+        if (in_array($language, $allowedPages) && isset($webDir) && isset($language)) {
+			include("${webDir}modules/lang/$language/common.inc.php");
+			$extra_messages = "${webDir}/config/$language.inc.php";
+			if (file_exists($extra_messages)) {
+					include $extra_messages;
+			} else {
+					$extra_messages = false;
+			}
+			include("${webDir}modules/lang/$language/messages.inc.php");
+			if ($extra_messages) {
+					include $extra_messages;
+			}
+		}
+		else{
+			http_response_code(404);
+			die();
+		}
         // create directories
         umask(0);
         if (! (mkdir("../../courses/$repertoire", 0777) and
@@ -379,6 +392,29 @@ if (isset($_POST['create_course'])) {
 
         // ------------- update main Db------------
         mysql_select_db("$mysqlMainDb");
+
+		$intitule = htmlspecialchars($intitule, ENT_QUOTES);
+		$facname = htmlspecialchars($facname, ENT_QUOTES);
+		$facid = htmlspecialchars($facid, ENT_QUOTES);
+		$titulaires = htmlspecialchars($titulaires, ENT_QUOTES);
+		$type = htmlspecialchars($type, ENT_QUOTES);
+		$code = htmlspecialchars($code, ENT_QUOTES);
+		$languageCourse = htmlspecialchars($languageCourse, ENT_QUOTES);
+		$description = htmlspecialchars($description, ENT_QUOTES);
+		$course_addon = htmlspecialchars($course_addon, ENT_QUOTES);
+		$course_keywords = htmlspecialchars($course_keywords, ENT_QUOTES);
+		$formvisible = htmlspecialchars($formvisible, ENT_QUOTES);
+		$language = htmlspecialchars($language, ENT_QUOTES);
+
+
+		$description = str_replace("&lt;p&gt;", "<p>",	$description);
+		$description = str_replace("&lt;/p&gt;", "</p>",	$description); 
+    	$description = str_replace("&lt;br /&gt;", "<br />",	$description);
+
+		$course_addon = str_replace("&lt;p&gt;", "<p>", $course_addon);
+		$course_addon = str_replace("&lt;/p&gt;", "</p>", $course_addon); 
+		$course_addon = str_replace("&lt;br /&gt;", "<br />", $course_addon);
+						
 
         db_query("INSERT INTO cours SET
                         code = '$code',
@@ -430,6 +466,7 @@ if (isset($_POST['create_course'])) {
                 <p class=\"success_small\">$langJustCreated: &nbsp;<b>$intitule</b></p>
                 <p><small>$langEnterMetadata</small></p><br />
                 <p align='center'>&nbsp;<a href='../../courses/$repertoire/index.php' class=mainpage>$langEnter</a>&nbsp;</p>";
+	}
 } // end of submit
 
 $tool_content .= "</form>";

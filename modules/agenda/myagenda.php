@@ -48,6 +48,7 @@ $TABLECOURS     = "`$mysqlMainDb`.cours";
 $TABLECOURSUSER = "`$mysqlMainDb`.cours_user";
 
 if (isset($uid))
+	$uid = escapeSimple($uid);
 {
  	$query = db_query("SELECT cours.code k, cours.fake_code fc,
 		cours.intitule i, cours.titulaires t
@@ -62,6 +63,8 @@ if (isset($uid))
 		$year = $today['year'];
 		$month = $today['mon'];
 	}
+	$month = htmlspecialchars($month, ENT_QUOTES);
+	$year = htmlspecialchars($year, ENT_QUOTES);
 
 	@$agendaitems = get_agendaitems($query, $month, $year);
 	$monthName = $langMonthNames['long'][$month-1];
@@ -88,6 +91,10 @@ function get_agendaitems($query, $month, $year) {
 	// get agenda-items for every course
 	while ($mycours = mysql_fetch_array($query))
 	{
+	$month = escapeSimple($month);
+	$year = escapeSimple($year);
+	$mycours[k] = escapeSimple($mycours[k]);
+	
 	$result = db_query("SELECT * FROM agenda WHERE month(day)='$month' AND year(day)='$year'","$mycours[k]");
 
 	    while ($item = mysql_fetch_array($result))

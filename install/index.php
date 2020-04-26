@@ -61,16 +61,25 @@ if ($lang == 'english') {
 	$install_info_file = "install_info.php";
 }
 // include_messages
-include("../modules/lang/$lang/common.inc.php");
-$extra_messages = "../config/$lang.inc.php";
-if (file_exists($extra_messages)) {
-        include $extra_messages;
-} else {
-        $extra_messages = false;
+
+$allowedPages = array('english', 'greek', 'spanish');
+//MIGHT THROW AN ERROR BECAUSE OF PATH
+if (in_array($lang, $allowedPages) && isset($lang)) {
+	include("../modules/lang/$lang/common.inc.php");
+	$extra_messages = "../config/$lang.inc.php";
+	if (file_exists($extra_messages)) {
+			include $extra_messages;
+	} else {
+			$extra_messages = false;
+	}
+	include("../modules/lang/$lang/messages.inc.php");
+	if ($extra_messages) {
+			include $extra_messages;
+	}
 }
-include("../modules/lang/$lang/messages.inc.php");
-if ($extra_messages) {
-        include $extra_messages;
+else{
+	http_response_code(404);
+	die();
 }
 
 if (file_exists("../config/config.php")) {

@@ -109,21 +109,39 @@ if ($is_adminOfCourse) {
 	// change visibility
 	if (isset($mkInvisibl) or isset($mkVisibl)) { 
 		if (@$mkInvisibl == true) {
+
+			$id = intval($id);
+			$currentCourseID = escapeSimple($currentCourseID);
+		
 			$sql = "UPDATE agenda SET visibility = 'i'
                 		WHERE id='".mysql_real_escape_string($id)."'";
 			$p_sql= "DELETE FROM agenda WHERE lesson_code = '$currentCourseID' 
 				AND lesson_event_id ='".mysql_real_escape_string($id)."'";
 		} elseif (@$mkVisibl == true) {
+			$id = intval($id);
+			$currentCourseID = escapeSimple($currentCourseID);
+
 			$sql = "UPDATE agenda SET visibility = 'v' WHERE id='".mysql_real_escape_string($id)."'";
 			$p_sql = "SELECT id, titre, contenu, DAY, HOUR, lasting
 				FROM agenda WHERE id='".mysql_real_escape_string($id)."'";
 			$perso_result = db_query($p_sql, $currentCourseID);
 			$perso_query_result = mysql_fetch_row($perso_result);
-			$perso_matrix['titre'] = $perso_query_result[1];
-			$perso_matrix['contenu'] = $perso_query_result[2];
-			$perso_matrix['date_selection'] = $perso_query_result[3];
-			$perso_matrix['hour'] = $perso_query_result[4];
-			$perso_matrix['lasting'] = $perso_query_result[5];
+			$perso_matrix['titre'] = htmlspecialchars($perso_query_result[1], ENT_QUOTES);
+			$perso_matrix['contenu'] = htmlspecialchars($perso_query_result[2],ENT_QUOTES);
+			$perso_matrix['date_selection'] = htmlspecialchars($perso_query_result[3],ENT_QUOTES);
+			$perso_matrix['hour'] =  htmlspecialchars($perso_query_result[4],ENT_QUOTES);
+			$perso_matrix['lasting'] =  htmlspecialchars($perso_query_result[5],ENT_QUOTES);
+
+
+			$id = intval($id);
+			$currentCourseID = escapeSimple($currentCourseID);
+			$perso_query_result[0] = mysql_real_escape_string($perso_query_result[0]);
+			$perso_query_result[1] = mysql_real_escape_string($perso_query_result[1]);
+			$perso_query_result[2] = mysql_real_escape_string($perso_query_result[2]);
+			$perso_query_result[3] = mysql_real_escape_string($perso_query_result[3]);
+			$perso_query_result[4] = mysql_real_escape_string($perso_query_result[4]);
+			$perso_query_result[5] = mysql_real_escape_string($perso_query_result[5]);
+
 			// Add all data to the main table.
 			$p_sql = "INSERT INTO agenda (lesson_event_id, titre, contenu, day, hour, lasting, lesson_code)
 				VALUES('".$perso_query_result[0]."','".$perso_query_result[1]."',
@@ -137,8 +155,13 @@ if ($is_adminOfCourse) {
 	if (isset($_POST['submit'])) {
 		$date_selection = $date;
 		$hour = $fhour.":".$fminute;
-
+		$titre = htmlspecialchars($titre, ENT_QUOTES);
+		$contenu = htmlspecialchars($contenu, ENT_QUOTES);
+		$lasting = htmlspecialchars($lasting, ENT_QUOTES);
 		if(isset($id) && $id) {
+			$id = intval($id);
+			$currentCourseID = escapeSimple($currentCourseID);
+
 			$sql = "UPDATE agenda
                 	SET titre='".mysql_real_escape_string(trim($titre))."',
                 	contenu='".mysql_real_escape_string(trim($contenu))."',
@@ -148,6 +171,8 @@ if ($is_adminOfCourse) {
                 	WHERE id='".mysql_real_escape_string($id)."'";
 
 			##[BEGIN personalisation modification]############
+			$mysqlMainDb = escapeSimple($mysqlMainDb);
+
 			$perso_sql = "UPDATE $mysqlMainDb.agenda
                   	SET titre='".mysql_real_escape_string(trim($titre))."',
                         contenu='".mysql_real_escape_string(trim($contenu))."',
@@ -180,13 +205,22 @@ if ($is_adminOfCourse) {
 					FROM agenda ORDER BY id DESC LIMIT 1 ";
 				$perso_result = db_query($perso_sql, $currentCourseID);
 				$perso_query_result = mysql_fetch_row($perso_result);
-				$perso_matrix['titre'] = $perso_query_result[1];
-				$perso_matrix['contenu'] = $perso_query_result[2];
-				$perso_matrix['date_selection'] = $perso_query_result[3];
-				$perso_matrix['hour'] = $perso_query_result[4];
-				$perso_matrix['lasting'] = $perso_query_result[5];
+				$perso_matrix['titre'] = htmlspecialchars($perso_query_result[1], ENT_QUOTES);
+				$perso_matrix['contenu'] = htmlspecialchars($perso_query_result[2], ENT_QUOTES);
+				$perso_matrix['date_selection'] = htmlspecialchars($perso_query_result[3], ENT_QUOTES);
+				$perso_matrix['hour'] = htmlspecialchars($perso_query_result[4], ENT_QUOTES);
+				$perso_matrix['lasting'] = htmlspecialchars($perso_query_result[5], ENT_QUOTES);
 	
+				$currentCourseID = escapeSimple($currentCourseID);
+				$perso_query_result[0] = mysql_real_escape_string($perso_query_result[0]);
+				$perso_query_result[1] = mysql_real_escape_string($perso_query_result[1]);
+				$perso_query_result[2] = mysql_real_escape_string($perso_query_result[2]);
+				$perso_query_result[3] = mysql_real_escape_string($perso_query_result[3]);
+				$perso_query_result[4] = mysql_real_escape_string($perso_query_result[4]);
+				$perso_query_result[5] = mysql_real_escape_string($perso_query_result[5]);
 				// Add all data to the main table.
+				$mysqlMainDb = escapeSimple($mysqlMainDb);
+				
 				$perso_sql = "INSERT INTO $mysqlMainDb.agenda
 				(lesson_event_id, titre, contenu, day, hour, lasting, lesson_code)
 				VALUES('".$perso_query_result[0]."','".$perso_query_result[1]."',
@@ -205,6 +239,10 @@ if ($is_adminOfCourse) {
 		unset($addEvent);
 	}
 	elseif (isset($delete) && $delete) {
+
+		$id = intval($id);
+		$currentCourseID = escapeSimple($currentCourseID);
+
 		$sql = "DELETE FROM agenda WHERE id=$id";
 		$result = db_query($sql,$currentCourseID);
 
@@ -251,6 +289,9 @@ function confirmation (name)
 	$tool_content .= "\n    </ul>\n  </div>\n";
 }
 	if (isset($id) && $id) {
+		$id = intval($id);
+		$currentCourseID = escapeSimple($currentCourseID);
+
 		$sql = "SELECT id, titre, contenu, day, hour, lasting FROM agenda WHERE id=$id";
 		$result= db_query($sql, $currentCourseID);
 		$myrow = mysql_fetch_array($result);
@@ -260,6 +301,10 @@ function confirmation (name)
 		$hourAncient=$myrow["hour"];
 		$dayAncient=$myrow["day"];
 		$lastingAncient=$myrow["lasting"];
+
+		$titre = htmlspecialchars($titre, ENT_QUOTES);
+		$contenu = htmlspecialchars($contenu, ENT_QUOTES);
+		$lasting = htmlspecialchars($lasting, ENT_QUOTES);
 
 		$start_cal = $jscalendar->make_input_field(
           array('showOthers' => true,
@@ -338,6 +383,7 @@ function confirmation (name)
 if (!isset($sens)) $sens =" ASC";
 
 if ($is_adminOfCourse) { 
+	
 	$result = db_query("SELECT id, titre, contenu, day, hour, lasting, visibility FROM agenda ORDER BY day ".$sens.", hour ".$sens,$currentCourseID);
 } else {
 	$result = db_query("SELECT id, titre, contenu, day, hour, lasting, visibility FROM agenda WHERE visibility = 'v' 

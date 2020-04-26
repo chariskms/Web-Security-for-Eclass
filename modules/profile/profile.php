@@ -36,18 +36,27 @@ check_uid();
 $nameTools = $langModifProfile;
 check_guest();
 $allow_username_change = !get_config('block-username-change');
-
+$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
 if (isset($submit) && (!isset($ldap_submit)) && !isset($changePass)) {
         if (!$allow_username_change) {
                 $username_form = $uname;
         }
 	// check if username exists
-	$username_check=mysql_query("SELECT username FROM user WHERE username='".escapeSimple($username_form)."'");
-	while ($myusername = mysql_fetch_array($username_check))
+	//$username_check=mysql_query("SELECT username FROM user WHERE username='".escapeSimple($username_form)."'");
+	$sql= $pdodb->prepare("SELECT username FROM user WHERE username= ?");
+			$username_form = escapeSimple($username_form);
+			$sql->bindParam(1, $username_form);
+			$sql->execute();
+	while ($myusername = $sql->fetch(PDO::FETCH_ASSOC))
 	{
 		$user_exist=$myusername[0];
 	}
 
+
+	$username_form = htmlspecialchars($username_form, ENT_QUOTES);
+	$prenom_form = htmlspecialchars($prenom_form, ENT_QUOTES);
+	$nom_form = htmlspecialchars($nom_form, ENT_QUOTES);
+	$am_form = htmlspecialchars($am_form, ENT_QUOTES);
 	// check if there are empty fields
 	if (empty($nom_form) OR empty($prenom_form) OR empty($username_form)) {
 		header("location:". $_SERVER['PHP_SELF']."?msg=4");
@@ -82,18 +91,42 @@ if (isset($submit) && (!isset($ldap_submit)) && !isset($changePass)) {
 		$_SESSION['langswitch'] = $language = langcode_to_name($_REQUEST['userLanguage']);
 		$langcode = langname_to_code($language);
 
-		$username_form = escapeSimple($username_form);
-		if(mysql_query("UPDATE user
-	        SET nom='$nom_form', prenom='$prenom_form',
-	        username='$username_form', email='$email_form', am='$am_form',
-	            perso='$persoStatus', lang='$langcode'
-	        WHERE user_id='".$_SESSION["uid"]."'")) {
-			if (isset($_SESSION['user_perso_active']) and $persoStatus == "no") {
-                		unset($_SESSION['user_perso_active']);
+		if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+
+			$username_form = escapeSimple($username_form);
+			$nom_form = escapeSimple($nom_form);
+			$prenom_form = escapeSimple($prenom_form);
+
+			// mysql_query("UPDATE user
+			//     SET nom='$nom_form', prenom='$prenom_form',
+			//     username='$username_form', email='$email_form', am='$am_form',
+			//         perso='$persoStatus', lang='$langcode'
+			// 	WHERE user_id='".$_SESSION["uid"]."'")   
+		
+
+			$sql = $pdodb->prepare("UPDATE user
+	        SET nom= ? , prenom= ?,
+	        username= ? , email= ?, am=?,
+	            perso=?, lang=?
+			WHERE user_id=?");
+			$user_id = intval($_SESSION["uid"]);
+			$sql->bindParam(1, $nom_form);
+			$sql->bindParam(2, $prenom_form);
+			$sql->bindParam(3, $username_form);
+			$sql->bindParam(4, $email_form);
+			$sql->bindParam(5, $am_form);
+			$sql->bindParam(6, $persoStatus);
+			$sql->bindParam(7, $langcode);
+			$sql->bindParam(8, $user_id);
+
+			if($sql->execute()){
+				if (isset($_SESSION['user_perso_active']) and $persoStatus == "no") {
+                			unset($_SESSION['user_perso_active']);
+				}
+				header("location:". $_SERVER['PHP_SELF']."?msg=1");
+				exit();
 			}
-			header("location:". $_SERVER['PHP_SELF']."?msg=1");
-			exit();
-	        }
+		}
 	}
 }	// if submit
 
@@ -102,15 +135,26 @@ if (isset($submit) && isset($ldap_submit) && ($ldap_submit == "ON")) {
 	$_SESSION['langswitch'] = $language = langcode_to_name($_REQUEST['userLanguage']);
 	$langcode = langname_to_code($language);
 
-	mysql_query("UPDATE user SET perso = '$persoStatus',
-		lang = '$langcode' WHERE user_id='".$_SESSION["uid"]."' ");
-	
-	if (isset($_SESSION['user_perso_active']) and $persoStatus == "no") {
-		unset($_SESSION['user_perso_active']);
-	}
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
 
-	header("location:". $_SERVER['PHP_SELF']."?msg=1");
-	exit();
+		$sql = $pdodb -> prepare("UPDATE user SET perso = ?,
+		lang = ? WHERE user_id= ?");
+		$user_id = intval($_SESSION["uid"]);
+		$sql->bindParam(1, $persoStatus);
+		$sql->bindParam(2, $langcode);
+		$sql->bindParam(3, $user_id);
+		$sql ->execute();
+		
+		// mysql_query("UPDATE user SET perso = '$persoStatus',
+		// 	lang = '$langcode' WHERE user_id='".$_SESSION["uid"]."' ");
+		
+		if (isset($_SESSION['user_perso_active']) and $persoStatus == "no") {
+			unset($_SESSION['user_perso_active']);
+		}
+
+		header("location:". $_SERVER['PHP_SELF']."?msg=1");
+		exit();
+	}
 }
 ##[END personalisation modification]############
 
@@ -161,10 +205,19 @@ if(isset($msg))
 
 }
 
-$sqlGetInfoUser ="SELECT nom, prenom, username, password, email, am, perso, lang
-    FROM user WHERE user_id='".$uid."'";
-$result=mysql_query($sqlGetInfoUser);
-$myrow = mysql_fetch_array($result);
+// $sqlGetInfoUser ="SELECT nom, prenom, username, password, email, am, perso, lang
+// 	FROM user WHERE user_id='".$uid."'";
+
+// $result=mysql_query($sqlGetInfoUser);
+// $myrow = mysql_fetch_array($result);
+$pdprof = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+$sqlGetInfoUser = $pdprof->prepare("SELECT nom, prenom, username, password, email, am, perso, lang
+FROM user WHERE user_id= ?");
+
+$sqlGetInfoUser->bindParam(1, $uid);
+$sqlGetInfoUser->execute();
+$myrow = $sqlGetInfoUser->fetch(PDO::FETCH_ASSOC);
+
 
 $nom_form = $myrow['nom'];
 $prenom_form = $myrow['prenom'];
@@ -215,6 +268,8 @@ if ((!isset($changePass)) || isset($_POST['submit'])) {
 	if(!in_array($password_form,$authmethods)) {
 		$tool_content .= "<li><a href=\"".$passurl."\">".$langChangePass."</a></li>";
 	}
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+
 	$tool_content .= " <li><a href='../unreguser/unreguser.php'>$langUnregUser</a></li>";
 	$tool_content .= "</ul></div>";
 	$tool_content .= "<form method=\"post\" action=\"$sec?submit=yes\"><br/>
@@ -301,7 +356,8 @@ if ((!isset($changePass)) || isset($_POST['submit'])) {
       </td>
     </tr>
 	<tr>
-      <th>&nbsp;</th>
+	  <th>&nbsp;</th>
+	  <input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
       <td><input type=\"Submit\" name=\"submit\" value=\"$langModify\"></td>
     </tr>
     </tbody>

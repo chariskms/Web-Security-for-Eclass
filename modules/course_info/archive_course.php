@@ -143,6 +143,7 @@ function create_backup_file($file) {
 	if (!$f) {
 		die("Error! Unable to open output file: '$f'\n");
 	}
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
 	list($ver) = mysql_fetch_array(db_query("SELECT `value` FROM `$mysqlMainDb`.config WHERE `key`='version'"));
 	fputs($f, "<?\n\$eclass_version = '$ver';\n\$version = 2;\n\$encoding = 'UTF-8';\n");
 	backup_course_details($f, $currentCourseID);
@@ -156,7 +157,8 @@ function create_backup_file($file) {
 
 function backup_annonces($f, $cours_id) {
 	global $mysqlMainDb;
-
+	$cours_id = escapeSimple($cours_id);
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
 	$res = mysql_query("SELECT * FROM `$mysqlMainDb`.annonces
 				    WHERE cours_id = $cours_id");
 	while($q = mysql_fetch_array($res)) {
@@ -170,7 +172,8 @@ function backup_annonces($f, $cours_id) {
 
 function backup_course_units($f) {
 	global $mysqlMainDb, $cours_id;
-	
+	$cours_id = escapeSimple($cours_id);
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
 	$res = mysql_query("SELECT * FROM `$mysqlMainDb`.course_units
 				    WHERE course_id = $cours_id");
 	while($q = mysql_fetch_array($res)) {
@@ -179,6 +182,8 @@ function backup_course_units($f) {
 			quote($q['comments']).", ".
 			quote($q['visibility']).", ".
 			quote($q['order']).", array(");
+
+		$q[id] = escapeSimple($q[id]);
 		$res2 = db_query("SELECT * FROM unit_resources WHERE unit_id = $q[id]", $mysqlMainDb);
 		$begin = true;
 		while($q2 = mysql_fetch_array($res2)) {
@@ -266,7 +271,8 @@ function backup_dropbox_post($f) {
 
 function backup_users($f, $cours_id) {
 	global $mysqlMainDb;
-
+	$cours_id = escapeSimple($cours_id);
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
 	$res = mysql_query("SELECT user.*, cours_user.statut as cours_statut
 		FROM `$mysqlMainDb`.user, `$mysqlMainDb`.cours_user
 		WHERE user.user_id=cours_user.user_id
@@ -347,7 +353,8 @@ function backup_course_db($f, $course) {
 
 function backup_course_details($f, $course) {
 	global $mysqlMainDb;
-
+	$mysqlMainDb = escapeSimple($mysqlMainDb);
+	$course = escapeSimple($course);
 	$res = mysql_query("SELECT * FROM `$mysqlMainDb`.cours
 				    WHERE code = '$course'");
 	$q = mysql_fetch_array($res);

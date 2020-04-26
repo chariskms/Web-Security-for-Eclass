@@ -38,33 +38,40 @@ include 'upgrade_functions.php';
 set_time_limit(0);
 
 // We need some messages from all languages to upgrade course accueil table
-foreach ($native_language_names as $code => $name) {
-        $templang = langcode_to_name($code);
+$allowedPages = array('english', 'greek', 'spanish');
+if(isset($templang) && isset($webDir) && in_array($templang, $allowedPages) && isset($language) && in_array($language, $allowedPages)){
+        foreach ($native_language_names as $code => $name) {
+                $templang = langcode_to_name($code);
+                // include_messages
+                include("${webDir}modules/lang/$templang/common.inc.php");
+                $extra_messages = "${webDir}/config/$templang.inc.php";
+                if (file_exists($extra_messages)) {
+                        include $extra_messages;
+                } else {
+                        $extra_messages = false;
+                }
+                include("${webDir}modules/lang/$templang/messages.inc.php");
+                if ($extra_messages) {
+                        include $extra_messages;
+                }
+                $global_messages['langCourseUnits'][$templang] = $langCourseUnits;
+        }
         // include_messages
-        include("${webDir}modules/lang/$templang/common.inc.php");
-        $extra_messages = "${webDir}/config/$templang.inc.php";
+        include("${webDir}modules/lang/$language/common.inc.php");
+        $extra_messages = "${webDir}/config/$language.inc.php";
         if (file_exists($extra_messages)) {
                 include $extra_messages;
         } else {
                 $extra_messages = false;
         }
-        include("${webDir}modules/lang/$templang/messages.inc.php");
+        include("${webDir}modules/lang/$language/messages.inc.php");
         if ($extra_messages) {
                 include $extra_messages;
         }
-        $global_messages['langCourseUnits'][$templang] = $langCourseUnits;
 }
-// include_messages
-include("${webDir}modules/lang/$language/common.inc.php");
-$extra_messages = "${webDir}/config/$language.inc.php";
-if (file_exists($extra_messages)) {
-        include $extra_messages;
-} else {
-        $extra_messages = false;
-}
-include("${webDir}modules/lang/$language/messages.inc.php");
-if ($extra_messages) {
-        include $extra_messages;
+else{
+        http_response_code(404);
+	die();
 }
 
 $nameTools = $langUpgrade;
@@ -126,6 +133,8 @@ if (!@chdir("../config/")) {
 }
 
 if (!isset($submit2)) {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+    
         $closeregdefault = $close_user_registration? ' checked="checked"': '';
         // get old contact values
         $tool_content .= "<form action='$_SERVER[PHP_SELF]' method='post'>" .
@@ -147,7 +156,8 @@ if (!isset($submit2)) {
                 <span class='explanationtext'>$langViaReq</span></td>
                 <td style='border: 1px solid #FFFFFF;'><input type='checkbox' name='reguser' $closeregdefault></td>
                 </tr>
-                </table></fieldset>
+				</table></fieldset>
+				<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
                 <p><input name='submit2' value='$langCont' type='submit'></p>
                 </div></form>";
 } else {
@@ -162,7 +172,7 @@ if (!isset($submit2)) {
 </head>
 <body class='upgrade-main'>
 <?php
-
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
         echo "<h1>$langUpgradeStart</h1>",
              "<p>$langUpgradeConfig</p>";
 	flush();
@@ -359,7 +369,7 @@ if (!isset($submit2)) {
                 echo "</p>\n";
                 $i++;
         }
-	echo "<hr />";
+		echo "<hr />";
 	
         if ($oldversion < '2.1.3') {
 	        echo "<p>$langChangeDBCharset <b>$mysqlMainDb</b> $langToUTF</p><br />";
@@ -374,7 +384,8 @@ if (!isset($submit2)) {
 		<center><p><a href='$urlServer?logout=yes'>$langBack</a></p></center>";
 
         echo '</body></html>';
-        exit;
+		exit;
+	}
 } // end of if not submit
 
 draw($tool_content, 0);

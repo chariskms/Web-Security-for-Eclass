@@ -46,14 +46,18 @@ if (empty($userdata['email'])) {
 		$tool_content .= sprintf('<p>'.$langNonUserContact.'</p>', $urlServer);
 	}
 } elseif (isset($_POST['content'])) {
+	$content = htmlspecialchars($content, ENT_QUOTES);
 	$content = trim($_POST['content']);
 	if (empty($content)) {
 		$tool_content .= "<p>$langEmptyMessage</p>";
 		$tool_content .= form();
 	} else {
-		$tool_content .= email_profs($cours_id, $content,
-			"$userdata[prenom] $userdata[nom]",
-			$userdata['email']);
+		if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+		
+			$tool_content .= email_profs($cours_id, $content,
+				"$userdata[prenom] $userdata[nom]",
+				$userdata['email']);
+		}
 	}
 } else {
 	$tool_content .= form();
@@ -65,6 +69,7 @@ draw($tool_content, 2, 'admin');
 // display form
 function form()
 {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
   $ret = "
   <form method='post' action='$_SERVER[PHP_SELF]'>
 
@@ -79,7 +84,8 @@ function form()
     <td><textarea class=auth_input name='content' rows='10' cols='80'></textarea></td>
   </tr>
   <tr>
-    <th>&nbsp;</th>
+	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
     <td><input type='submit' name='submit' value='$GLOBALS[langSendMessage]' /></td>
   </tr>
   </tbody>

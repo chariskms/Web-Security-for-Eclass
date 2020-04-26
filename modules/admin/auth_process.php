@@ -67,98 +67,105 @@ $test_password = isset($_POST['test_password'])?$_POST['test_password']:'';
 
 if((!empty($auth_submit)) && ($auth_submit==1)) {
 	$submit = isset($_POST['submit'])?$_POST['submit']:'';
-	// if form is submitted
-	if((array_key_exists('submit', $_POST)) && (!empty($submit))) {
-		$tool_content .= "<br /><p>$langConnTest</p>";
-		if ($auth == 6) {
-			$test_username = $test_password = " ";
-		}
-		if((!empty($test_username)) && (!empty($test_password))) {
-			$is_valid = auth_user_login($auth, $test_username, $test_password);
-			if($is_valid) {
-				$auth_allow = 1;
-				$tool_content .= "<table width=\"99%\"><tbody><tr>
-				<td class=\"success\">$langConnYes</td></tr></tbody></table><br /><br />";
-			} else {
-				$tool_content .= "<table width=\"99%\"><tbody><tr><td class=\"caution\">$langConnNo";
-				if (isset($GLOBALS['auth_errors'])) {
-					$tool_content .= "<p>$GLOBALS[auth_errors]</p>";
+		// if form is submitted
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){	
+		if((array_key_exists('submit', $_POST)) && (!empty($submit))) {
+			$tool_content .= "<br /><p>$langConnTest</p>";
+			if ($auth == 6) {
+				$test_username = $test_password = " ";
+			}
+			if((!empty($test_username)) && (!empty($test_password))) {
+				$is_valid = auth_user_login($auth, $test_username, $test_password);
+				if($is_valid) {
+					$auth_allow = 1;
+					$tool_content .= "<table width=\"99%\"><tbody><tr>
+					<td class=\"success\">$langConnYes</td></tr></tbody></table><br /><br />";
+				} else {
+					$tool_content .= "<table width=\"99%\"><tbody><tr><td class=\"caution\">$langConnNo";
+					if (isset($GLOBALS['auth_errors'])) {
+						$tool_content .= "<p>$GLOBALS[auth_errors]</p>";
+					}
+					$tool_content .= "</td></tr></tbody></table><br /><br />";
+					$auth_allow = 0;
 				}
-				$tool_content .= "</td></tr></tbody></table><br /><br />";
+			} else {
+				$tool_content .= "<table width=\"99%\"><tbody><tr>
+				<td class=\"caution\">$langWrongAuth</td></tr></tbody></table><br /><br />";
 				$auth_allow = 0;
 			}
-		} else {
-			$tool_content .= "<table width=\"99%\"><tbody><tr>
-			<td class=\"caution\">$langWrongAuth</td></tr></tbody></table><br /><br />";
-			$auth_allow = 0;
-		}
 
-		// store the values - do the updates //
-		if((!empty($auth_allow))&&($auth_allow==1)) {
-			switch($auth) {
-				case '1': $auth_default = 1;
-					$auth_settings = "";
-					$auth_instructions = "";
-					break;
-				case '2': $pop3host = isset($_POST['pop3host'])?$_POST['pop3host']:'';
-					$auth_default = 2;
-					$auth_settings = "pop3host=".$pop3host;
-					$auth_instructions = isset($_POST['pop3instructions'])?$_POST['pop3instructions']:'';
-					break;
-				case '3': $imaphost = isset($_POST['imaphost'])?$_POST['imaphost']:'';
-					$auth_default = 3;
-					$auth_settings = "imaphost=".$imaphost;
-					$auth_instructions = isset($_POST['imapinstructions'])?$_POST['imapinstructions']:'';
-					break;
-				case '4': $ldaphost = isset($_POST['ldaphost'])?$_POST['ldaphost']:'';
-					$ldapbase_dn = isset($_POST['ldapbase_dn'])?$_POST['ldapbase_dn']:'';
-					$ldapbind_user = isset($_POST['ldapbind_user'])?$_POST['ldapbind_user']:'';
-					$ldapbind_pw = isset($_POST['ldapbind_pw'])?$_POST['ldapbind_pw']:'';
-					$auth_default = 4;
-					$auth_settings = "ldaphost=".$ldaphost."|ldapbind_dn=".$ldapbind_dn."|ldapbind_user=".$ldapbind_user."|ldapbind_pw=".$ldapbind_pw;
-					$auth_instructions = isset($_POST['ldapinstructions'])?$_POST['ldapinstructions']:'';
-					break;
-				case '5': $dbhost = isset($_POST['dbhost'])?$_POST['dbhost']:'';
-					$dbtype = isset($_POST['dbtype'])?$_POST['dbtype']:'';
-					$dbname = isset($_POST['dbname'])?$_POST['dbname']:'';
-					$dbuser = isset($_POST['dbuser'])?$_POST['dbuser']:'';
-					$dbpass = isset($_POST['dbpass'])?$_POST['dbpass']:'';
-					$dbtable = isset($_POST['dbtable'])?$_POST['dbtable']:'';
-					$dbfielduser = isset($_POST['dbfielduser'])?$_POST['dbfielduser']:'';
-					$dbfieldpass = isset($_POST['dbfieldpass'])?$_POST['dbfieldpass']:'';
-					$auth_default = 5;
-					$auth_settings = "dbhost=".$dbhost."|dbname=".$dbname."|dbuser=".$dbuser."|dbpass=".$dbpass."|dbtable=".$dbtable."|dbfielduser=".$dbfielduser."|dbfieldpass=".$dbfieldpass;
-					$auth_instructions = isset($_POST['dbinstructions'])?$_POST['dbinstructions']:'';;
-					break;
-				case '6': $auth_instructions = isset($_POST['shibinstructions'])?$_POST['shibinstructions']:'';;
-					if (isset($checkseparator) && $checkseparator == "on") {
-						$auth_settings = $_POST['shibseparator'];
-					} else {
-						$auth_settings = 'shibboleth';
-					}
-					break;
-				default:
-					break;
-			}
-
-			$qry = "UPDATE auth SET auth_settings='".$auth_settings."',
-				auth_instructions='".$auth_instructions."',auth_default=1 
-				WHERE auth_id=".$auth;
-			$sql2 = mysql_query($qry,$db); // do the update as the default method
-			if($sql2) {
-				if(mysql_affected_rows($db)==1) {
-					$tool_content .= "<p class=\"alert1\">$langHasActivate</p>";
-				} else {
-					$tool_content .= "<p class=\"alert1\">$langAlreadyActiv</p>";
+			// store the values - do the updates //
+			if((!empty($auth_allow))&&($auth_allow==1)) {
+				switch($auth) {
+					case '1': $auth_default = 1;
+						$auth_settings = "";
+						$auth_instructions = "";
+						break;
+					case '2': $pop3host = isset($_POST['pop3host'])?$_POST['pop3host']:'';
+						$auth_default = 2;
+						$auth_settings = "pop3host=".$pop3host;
+						$auth_instructions = isset($_POST['pop3instructions'])?$_POST['pop3instructions']:'';
+						break;
+					case '3': $imaphost = isset($_POST['imaphost'])?$_POST['imaphost']:'';
+						$auth_default = 3;
+						$auth_settings = "imaphost=".$imaphost;
+						$auth_instructions = isset($_POST['imapinstructions'])?$_POST['imapinstructions']:'';
+						break;
+					case '4': $ldaphost = isset($_POST['ldaphost'])?$_POST['ldaphost']:'';
+						$ldapbase_dn = isset($_POST['ldapbase_dn'])?$_POST['ldapbase_dn']:'';
+						$ldapbind_user = isset($_POST['ldapbind_user'])?$_POST['ldapbind_user']:'';
+						$ldapbind_pw = isset($_POST['ldapbind_pw'])?$_POST['ldapbind_pw']:'';
+						$auth_default = 4;
+						$auth_settings = "ldaphost=".$ldaphost."|ldapbind_dn=".$ldapbind_dn."|ldapbind_user=".$ldapbind_user."|ldapbind_pw=".$ldapbind_pw;
+						$auth_instructions = isset($_POST['ldapinstructions'])?$_POST['ldapinstructions']:'';
+						break;
+					case '5': $dbhost = isset($_POST['dbhost'])?$_POST['dbhost']:'';
+						$dbtype = isset($_POST['dbtype'])?$_POST['dbtype']:'';
+						$dbname = isset($_POST['dbname'])?$_POST['dbname']:'';
+						$dbuser = isset($_POST['dbuser'])?$_POST['dbuser']:'';
+						$dbpass = isset($_POST['dbpass'])?$_POST['dbpass']:'';
+						$dbtable = isset($_POST['dbtable'])?$_POST['dbtable']:'';
+						$dbfielduser = isset($_POST['dbfielduser'])?$_POST['dbfielduser']:'';
+						$dbfieldpass = isset($_POST['dbfieldpass'])?$_POST['dbfieldpass']:'';
+						$auth_default = 5;
+						$auth_settings = "dbhost=".$dbhost."|dbname=".$dbname."|dbuser=".$dbuser."|dbpass=".$dbpass."|dbtable=".$dbtable."|dbfielduser=".$dbfielduser."|dbfieldpass=".$dbfieldpass;
+						$auth_instructions = isset($_POST['dbinstructions'])?$_POST['dbinstructions']:'';;
+						break;
+					case '6': $auth_instructions = isset($_POST['shibinstructions'])?$_POST['shibinstructions']:'';;
+						if (isset($checkseparator) && $checkseparator == "on") {
+							$auth_settings = $_POST['shibseparator'];
+						} else {
+							$auth_settings = 'shibboleth';
+						}
+						break;
+					default:
+						break;
 				}
-			} else {
-				$tool_content .= "<p class=\"alert1\">$langErrActiv</p>";
+
+				$auth_settings = htmlspecialchars($auth_settings, ENT_QUOTES);
+				$auth_instructions = htmlspecialchars($auth_instructions, ENT_QUOTES);
+				$auth = htmlspecialchars($auth, ENT_QUOTES);
+
+				$qry = "UPDATE auth SET auth_settings='".$auth_settings."',
+					auth_instructions='".$auth_instructions."',auth_default=1 
+					WHERE auth_id=".$auth;
+				$sql2 = mysql_query($qry,$db); // do the update as the default method
+				if($sql2) {
+					if(mysql_affected_rows($db)==1) {
+						$tool_content .= "<p class=\"alert1\">$langHasActivate</p>";
+					} else {
+						$tool_content .= "<p class=\"alert1\">$langAlreadyActiv</p>";
+					}
+				} else {
+					$tool_content .= "<p class=\"alert1\">$langErrActiv</p>";
+				}
 			}
 		}
 	}
 }
 else
 {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 	// Display the form 
 	if(isset($auth) and $auth != 6) {
 		$auth_data = get_auth_settings($auth);
@@ -188,6 +195,9 @@ else
 			break;
 	}
 
+    $test_username = htmlspecialchars($test_username, ENT_QUOTES);
+	$test_password = htmlspecialchars($test_password, ENT_QUOTES);
+
 	if ($auth != 6) { 
 		$tool_content .= "<tr><td colspan='2'>&nbsp;</td></tr>";
 		$tool_content .= "<tr><th>&nbsp;</th><td>$langTestAccount</td></tr>
@@ -196,7 +206,8 @@ else
 		<tr><th class='left'>$langPass: </th>
 		<td><input size='30' class='FormData_InputText' type='password' name='test_password' value='".$test_password."'></td></tr>";
 	}
-	$tool_content .= "<tr><th>&nbsp;</th><td><input type='submit' name='submit' value='$langModify'></form></td></tr>";
+	$tool_content .= "<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
+	<th>&nbsp;</th><td><input type='submit' name='submit' value='$langModify'></form></td></tr>";
 	$tool_content .="<br /></table>";
 }
 

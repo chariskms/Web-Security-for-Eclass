@@ -55,8 +55,15 @@ function check_password_editable($password)
 }
 
 if (isset($_REQUEST['do']) && $_REQUEST['do'] == "go") {
+	
+	
 	$userUID = (int)$_REQUEST['u'];
 	$hash = $_REQUEST['h'];
+	// if(){
+	// 	$error = TRUE;
+	// 	echo ($langError = "ERROR");
+	// 	die();
+	// }
 	$res = db_query("SELECT `user_id`, `hash`, `password`, `datetime` FROM passwd_reset
 			WHERE `user_id` = '" . mysql_escape_string($userUID) . "'
 			AND `hash` = '" . mysql_escape_string($hash) . "'
@@ -65,6 +72,7 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] == "go") {
 
 	if (mysql_num_rows($res) == 1) {
 		$myrow = mysql_fetch_array($res);
+		
 		//copy pass hash (md5) from reset_pass to user table
 		$sql = "UPDATE `user` SET `password` = '".$myrow['hash']."' WHERE `user_id` = ".$myrow['user_id']."";
 		if(db_query($sql, $mysqlMainDb)) {
@@ -95,8 +103,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] == "go") {
 		</tbody>
 		</table>";
 	}
-} elseif ((!isset($email) || !email_seems_valid($email)
-     || !isset($userName) || empty($userName)) && !isset($_REQUEST['do'])) {
+} elseif ((!isset($email) || !email_seems_valid($email) || !isset($userName) || empty($userName)) 
+ && !isset($_REQUEST['do'])) {
+
 
 		$lang_pass_invalid_mail= "$lang_pass_invalid_mail1 $lang_pass_invalid_mail2 $lang_pass_invalid_mail3";
 
@@ -127,19 +136,31 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] == "go") {
 		<br/>
 		<input type=\"submit\" name=\"doit\" value=\"".$lang_pass_submit."\" />
 	</form>";
+	
 
-} elseif (!isset($_REQUEST['do'])) {
+}
+elseif (!isset($_REQUEST['do'])) {
 	/***** If valid e-mail address was entered, find user and send email *****/
+	// if(!ctype_alnum(str_replace(' .', '', $userName))){
+	// 	$error = TRUE;
+	// 	echo ($langError = "ERROR");
+	// 	die();
+	// }
+	$userName = htmlspecialchars($userName, ENT_QUOTES);
 	$res = db_query("SELECT user_id, nom, prenom, username, password, statut FROM user
 			WHERE email = '" . mysql_escape_string($email) . "'
 			AND BINARY username = '" . mysql_escape_string($userName) . "'", $mysqlMainDb);
 
-        $found_editable_password = false;
+		$found_editable_password = false;
+		
 	if (mysql_num_rows($res) == 1) {
 		$text = $langPassResetIntro. $emailhelpdesk;
 		$text .= "$langHowToResetTitle";
 
+		
+
 		while ($s = mysql_fetch_array($res, MYSQL_ASSOC)) {
+			
 			$is_editable = check_password_editable($s['password']);
 			if($is_editable) {
                                 $found_editable_password = true;
@@ -223,7 +244,9 @@ if (isset($_REQUEST['do']) && $_REQUEST['do'] == "go") {
 		</tr>
 		</tbody></table>";
         }
-} else {
+} 
+
+else {
 	$tool_content = "<table width=\"99%\">
 	<tbody><tr>
 	<td class=\"caution\">

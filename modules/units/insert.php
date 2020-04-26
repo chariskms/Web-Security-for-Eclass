@@ -47,6 +47,9 @@ _editor_lang = '$lang_editor';
 $id = intval($_REQUEST['id']);
 
 // Check that the current unit id belongs to the current course
+
+$cours_id = escapeSimple($cours_id);
+
 $q = db_query("SELECT * FROM course_units
                WHERE id=$id AND course_id=$cours_id");
 if (!$q or mysql_num_rows($q) == 0) {
@@ -119,6 +122,7 @@ draw($tool_content, 2, 'units', $head_content);
 // insert docs in database
 function insert_docs($id)
 {
+	$id = escapeSimple($id);
 	list($order) = mysql_fetch_array(db_query("SELECT MAX(`order`) FROM unit_resources WHERE unit_id=$id"));
 	
 	foreach ($_POST['document'] as $file_id) {
@@ -139,11 +143,13 @@ function insert_docs($id)
 function insert_text($id)
 {
 	global $title, $comments;
-	
+	$id = escapeSimple($id);
+	$order = escapeSimple($order);
+
 	list($order) = mysql_fetch_array(db_query("SELECT MAX(`order`) FROM unit_resources WHERE unit_id=$id"));
 	$order++;
 	db_query("INSERT INTO unit_resources SET unit_id=$id, type='text', title='', 
-		comments=" . autoquote($comments) . ", visibility='v', `order`=$order, `date`=NOW(), res_id=0",
+		comments=" . autoquote(escapeSimple($comments)) . ", visibility='v', `order`=$order, `date`=NOW(), res_id=0",
 		$GLOBALS['mysqlMainDb']);
 			
 	header('Location: index.php?id=' . $id);
@@ -154,17 +160,23 @@ function insert_text($id)
 // insert lp in database
 function insert_lp($id)
 {
+	$id = escapeSimple($id);
 	list($order) = mysql_fetch_array(db_query("SELECT MAX(`order`) FROM unit_resources WHERE unit_id=$id"));
 	
 	foreach ($_POST['lp'] as $lp_id) {
 		$order++;
 		$lp = mysql_fetch_array(db_query("SELECT * FROM lp_learnPath
-			WHERE learnPath_id =" . intval($lp_id), $GLOBALS['currentCourseID']), MYSQL_ASSOC);
+			WHERE learnPath_id =" . intval($lp_id), escapeSimple($GLOBALS['currentCourseID'])), MYSQL_ASSOC);
 		if ($lp['visibility'] == 'HIDE') {
 			 $visibility = 'i';
 		} else {
 			$visibility = 'v';
 		}
+			$lp['comment']= escapeSimple($lp['comment']);
+			$lp['name']= escapeSimple($lp['name']);
+			$lp[learnPath_id]= escapeSimple($lp[learnPath_id]);
+			$order = escapeSimple($order);
+
 			db_query("INSERT INTO unit_resources SET unit_id=$id, type='lp', title=" .
 			quote($lp['name']) . ", comments=" . quote($lp['comment']) .
 			", visibility='$visibility', `order`=$order, `date`=NOW(), res_id=$lp[learnPath_id]",
@@ -183,7 +195,14 @@ function insert_video($id)
 		$order++;
                 list($table, $res_id) = explode(':', $video_id);
                 $res_id = intval($res_id);
-                $table = ($table == 'video')? 'video': 'videolinks';
+				$table = ($table == 'video')? 'video': 'videolinks';
+				
+		$res_id = escapeSimple($res_id);
+		$table = escapeSimple($table);
+		$row['titre'] = escapeSimple($row['titre']);
+		$row['description'] = escapeSimple($row['description']);
+		$order = escapeSimple($order);
+
 		$row = mysql_fetch_array(db_query("SELECT * FROM $table
 			WHERE id = $res_id", $GLOBALS['currentCourseID']), MYSQL_ASSOC);
                 db_query("INSERT INTO unit_resources SET unit_id=$id, type='$table', title=" . quote($row['titre']) . ", comments=" . quote($row['description']) . ", visibility='v', `order`=$order, `date`=NOW(), res_id=$res_id", $GLOBALS['mysqlMainDb']);
@@ -206,6 +225,13 @@ function insert_work($id)
 		} else {
 			$visibility = 'v';
 		}
+
+		$id = escapeSimple($id);
+		$work['title'] = escapeSimple($work['title']);
+		$work['description']= escapeSimple($work['description']);
+		$order = escapeSimple($order);
+		$work[id] = escapeSimple($work[id]);
+
 		db_query("INSERT INTO unit_resources SET
                                 unit_id = $id,
                                 type = 'work',
@@ -236,6 +262,14 @@ function insert_exercise($id)
 		} else {
 			$visibility = 'v';
 		}
+
+
+		$id = escapeSimple($id);
+		$exercise['titre'] = escapeSimple($exercise['titre']);
+		$exercise['description']= escapeSimple($exercise['description']);
+		$order = escapeSimple($order);
+		$exercise[id] = escapeSimple($exercise[id]);
+
 		db_query("INSERT INTO unit_resources SET unit_id=$id, type='exercise', title=" .
 			quote($exercise['titre']) . ", comments=" . quote($exercise['description']) .
 			", visibility='$visibility', `order`=$order, `date`=NOW(), res_id=$exercise[id]",
@@ -248,12 +282,15 @@ function insert_exercise($id)
 // insert forum in database
 function insert_forum($id)
 {
+
+	$id = escapeSimple($id);
 	list($order) = mysql_fetch_array(db_query("SELECT MAX(`order`) FROM unit_resources WHERE unit_id=$id"));
 	foreach ($_POST['forum'] as $for_id) {
 		$order++;
 		$ids = explode(':', $for_id);
 		if (count($ids) == 2) {
-                        list($forum_id, $topic_id) = $ids;
+						list($forum_id, $topic_id) = $ids;
+						
 			$topic = mysql_fetch_array(db_query("SELECT * FROM topics
 				WHERE topic_id =" . intval($topic_id) ." AND forum_id =" . intval($forum_id), $GLOBALS['currentCourseID']), MYSQL_ASSOC);
 			db_query("INSERT INTO unit_resources SET unit_id=$id, type='topic', title=" .
@@ -278,7 +315,7 @@ function insert_forum($id)
 function insert_wiki($id)
 {
 	list($order) = mysql_fetch_array(db_query("SELECT MAX(`order`) FROM unit_resources WHERE unit_id=$id"));
-	
+	$id = escapeSimple($id);
 	foreach ($_POST['wiki'] as $wiki_id) {
 		$order++;
 		$wiki = mysql_fetch_array(db_query("SELECT * FROM wiki_properties

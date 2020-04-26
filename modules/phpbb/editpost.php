@@ -79,6 +79,7 @@ include("functions.php"); // application logic for phpBB
  *****************************************************************************/
 if ($is_adminOfCourse) { // course admin 
 	if (isset($submit) && $submit) {
+	    $post_id = escapeSimple($post_id);
 		$sql = "SELECT * FROM posts WHERE post_id = '$post_id'";
 		if (!$result = db_query($sql, $currentCourseID)) {
 			$tool_content .= $langErrorDataOne;
@@ -96,6 +97,9 @@ if ($is_adminOfCourse) { // course admin
 		$this_post_time = $myrow["post_time"];
 		list($day, $time) = split(" ", $myrow["post_time"]);
 		$date = date("Y-m-d H:i");
+		
+		$forum_id = escapeSimple($forum_id);
+		$topic_id = escapeSimple($topic_id);
 	
 		$row1 = mysql_fetch_row(db_query("SELECT forum_name FROM forums WHERE forum_id='$forum_id'"));
 		$forum_name = $row1[0];
@@ -118,11 +122,15 @@ if ($is_adminOfCourse) { // course admin
 		}
 		if (isset($message)) {
 			$message = format_message($message);
+			$message = htmlspecialchars($message, ENT_QUOTES);
+
 		}
 		if (!isset($delete) || !$delete) {
 			$forward = 1;
 			$topic = $topic_id;
 			$forum = $forum_id;
+			$post_id = escapeSimple($post_id);
+			$message = escapeSimple($message);
 			$sql = "UPDATE posts_text SET post_text = " . autoquote($message) . " WHERE (post_id = '$post_id')";
 			if (!$result = db_query($sql, $currentCourseID)) {
 				$tool_content .= $langUnableUpadatePost;
@@ -131,6 +139,8 @@ if ($is_adminOfCourse) { // course admin
 			}
 			if (isset($subject)) {
 				$subject = strip_tags($subject);
+				$subject = htmlspecialchars($subject, ENT_QUOTES);
+
 			}
 			if (isset($subject) && (trim($subject) != '')) {
 				if(!isset($notify)) {
@@ -138,6 +148,8 @@ if ($is_adminOfCourse) { // course admin
 				} else {
 					$notify = 1;
 				}
+				$subject = escapeSimple($subject);
+				$notify = escapeSimple($notify);
 				$subject = addslashes($subject);
 				$sql = "UPDATE topics
 					SET topic_title = '$subject', topic_notify = '$notify'
@@ -162,6 +174,8 @@ if ($is_adminOfCourse) { // course admin
 			$now_min = date("i");
 			list($hour, $min) = split(":", $time);
 			$last_post_in_thread = get_last_post($topic_id, $currentCourseID, "time_fix");
+			$post_id = escapeSimple($post_id);
+			
 			$sql = "DELETE FROM posts
 				WHERE post_id = '$post_id'";
 			if (!$r = db_query($sql, $currentCourseID)){
@@ -176,17 +190,27 @@ if ($is_adminOfCourse) { // course admin
 				draw($tool_content, 2, 'phpbb', $head_content);
 				exit();
 			} else if ($last_post_in_thread == $this_post_time) {
+			    $topic_id = escapeSimple($topic_id);
 				$topic_time_fixed = get_last_post($topic_id, $currentCourseID, "time_fix");
-				$sql = "UPDATE topics
-					SET topic_time = '$topic_time_fixed'
-					WHERE topic_id = '$topic_id'";
-				if (!$r = db_query($sql, $currentCourseID)) {
+				$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$currentCourseID",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
+				$sql= $pdodb->prepare("UPDATE topics
+				SET topic_time = ?
+				WHERE topic_id = ?");
+
+				$sql->bindParam(1, $topic_time_fixed);
+				$sql->bindParam(2, $topic_id);
+				// $sql = "UPDATE topics
+				// 	SET topic_time = '$topic_time_fixed'
+				// 	WHERE topic_id = '$topic_id'";
+				if (!$r = $sql->execute()) {
 					$tool_content .= $langPostRemoved;
 					draw($tool_content, 2, 'phpbb', $head_content);
 					exit();
 				}
 			}
 			if (get_total_posts($topic_id, $currentCourseID, "topic") == 0) {
+			    $topic_id = escapeSimple($topic_id);
+			    
 				$sql = "DELETE FROM topics
 					WHERE topic_id = '$topic_id'";
 				if (!$r = db_query($sql, $currentCourseID)) {
@@ -214,6 +238,9 @@ if ($is_adminOfCourse) { // course admin
 		}
 	} else {
 		// Gotta handle private forums right here. They're naturally covered on submit, but not in this part.
+		$forum = escapeSimple($forum);
+		$topic = escapeSimple($topic);
+		
 		$sql = "SELECT f.forum_type, f.forum_name, t.topic_title
 			FROM forums f, topics t
 			WHERE (f.forum_id = '$forum') AND (t.topic_id = $topic) AND (t.forum_id = f.forum_id)";
@@ -271,7 +298,7 @@ if ($is_adminOfCourse) { // course admin
 				// Ok, looks like we're good.
 			}
 		}	
-		
+		$post_id = escapeSimple($post_id);
 		$sql = "SELECT p.*, pt.post_text, t.topic_title, t.topic_notify, 
 			       t.topic_title, t.topic_notify 
 			FROM posts p, topics t, posts_text pt 

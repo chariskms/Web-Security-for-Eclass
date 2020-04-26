@@ -58,12 +58,13 @@ $nameTools = $langSearchUser;
 
 // Main body
 $new = isset($_GET['new'])?$_GET['new']:'yes';	//variable of declaring a new search
-
+$new = htmlspecialchars($new, ENT_QUOTES);
 // initialize the variables
 $user_surname = $user_firstname = $user_username = $user_am = $user_type = $user_registered_at_flag = $user_registered_at = $user_email = '';
 
 // display the search form
 $tool_content .= "<form action=\"listusers.php?search=".$new."\" method=\"post\" name=\"user_search\">
+
 <table width=\"99%\">
 <tbody><tr>
 <th width=\"220\">&nbsp;</th>
@@ -84,6 +85,14 @@ $tool_content .= "<form action=\"listusers.php?search=".$new."\" method=\"post\"
 <tr>
 <th class='left'>$langUserType:</th>
 <td>";
+
+$user_firstname = htmlspecialchars($user_firstname, ENT_QUOTES);
+$user_surname = htmlspecialchars($user_surname, ENT_QUOTES);
+$user_am = htmlspecialchars($user_am, ENT_QUOTES);
+$user_email = htmlspecialchars($user_email, ENT_QUOTES);
+$user_firstname = htmlspecialchars($user_firstname, ENT_QUOTES);
+
+
 
 $usertype_data = array();
 $usertype_data[0] = $langAllUsers;

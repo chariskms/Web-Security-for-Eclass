@@ -51,6 +51,13 @@ if (is_file($fileParameter))
 /* Admin set parameters for conference module*/
 if ($is_adminOfCourse) {
 
+		$_POST["video_URL"] = htmlspecialchars($_POST["video_URL"], ENT_QUOTES);
+		$_POST["presentation_URL"] = htmlspecialchars($_POST["presentation_URL"], ENT_QUOTES);
+		$_POST["netmeeting_show"] = htmlspecialchars($_POST["netmeeting_show"], ENT_QUOTES);
+		$_POST["action"] = htmlspecialchars($_POST["action"], ENT_QUOTES);
+
+
+
 		if(isset($_POST["video_URL"]))
 		{
 		 	$URL["video_URL"]=stripslashes($_POST["video_URL"]);

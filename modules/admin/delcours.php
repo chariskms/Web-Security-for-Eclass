@@ -74,18 +74,20 @@ if (isset($search) && ($search=="yes")) {
 }
 // Delete course
 if (isset($_GET['delete']) && isset($_GET['c']))  {
-	db_query("DROP DATABASE `".mysql_real_escape_string($_GET['c'])."`");
-        mysql_select_db($mysqlMainDb);
-        $code = quote($_GET['c']);
-	db_query("DELETE FROM cours_faculte WHERE code = $code");
-	db_query("DELETE FROM cours_user WHERE cours_id =
-                        (SELECT cours_id FROM cours WHERE code = $code)");
-	db_query("DELETE FROM annonces WHERE cours_id =
-                        (SELECT cours_id FROM cours WHERE code = $code)");
-	db_query("DELETE FROM cours WHERE code = $code");
-	@mkdir("../../courses/garbage");
-	rename("../../courses/".$_GET['c'], "../../courses/garbage/".$_GET['c']);
-	$tool_content .= "<p>".$langCourseDelSuccess."</p>";
+	
+		db_query("DROP DATABASE `".mysql_real_escape_string($_GET['c'])."`");
+			mysql_select_db($mysqlMainDb);
+			$code = quote($_GET['c']);
+		db_query("DELETE FROM cours_faculte WHERE code = $code");
+		db_query("DELETE FROM cours_user WHERE cours_id =
+							(SELECT cours_id FROM cours WHERE code = $code)");
+		db_query("DELETE FROM annonces WHERE cours_id =
+							(SELECT cours_id FROM cours WHERE code = $code)");
+		db_query("DELETE FROM cours WHERE code = $code");
+		@mkdir("../../courses/garbage");
+		rename("../../courses/".$_GET['c'], "../../courses/garbage/".$_GET['c']);
+		$tool_content .= "<p>".$langCourseDelSuccess."</p>";
+	
 }
 // Display confirmatiom message for course deletion
 else {

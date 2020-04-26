@@ -62,6 +62,7 @@ include '../../include/baseTheme.php';
 $nameTools=$langListFaculteActions;
 $navigation[] = array("url" => "index.php", "name" => $langAdmin);
 if (isset($a)) {
+	$a = q($a);
 	switch ($a) {
 		case 1:
 			$navigation[] = array("url" => "$_SERVER[PHP_SELF]", "name" => $langListFaculteActions);
@@ -138,6 +139,7 @@ if (!isset($a)) {
 }
 // Add a new faculte
 elseif ($a == 1)  {
+
 	if (isset($add)) {
 		// Check for empty fields
 		if (empty($codefaculte) or empty($faculte)) {
@@ -161,11 +163,19 @@ elseif ($a == 1)  {
 			$tool_content .= "<center><p><a href=\"$_SERVER[PHP_SELF]?a=1\">".$langReturnToAddFaculte."</a></p></center>";
 		} else {
 		// OK Create the new faculty
-			mysql_query("INSERT into faculte(code,name,generator,number) VALUES(" . autoquote($codefaculte) . ',' . autoquote($faculte) . ",'100','1000')")
+			
+			if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+
+				mysql_query("INSERT into faculte(code,name,generator,number) VALUES(" . autoquote($codefaculte) . ',' . autoquote($faculte) . ",'100','1000')")
 				or die ($langNoSuccess);
-			$tool_content .= "<p>".$langAddSuccess."</p><br />";
+				$tool_content .= "<p>".$langAddSuccess."</p><br />";
 			}
+			else{
+				die ($langNoSuccess);
+			}
+		}
 	} else {
+		$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
 		// Display form for new faculte information
 		$tool_content .= "<form method=\"post\" action=\"".$_SERVER['PHP_SELF']."?a=1\">";
 		$tool_content .= "<table width='99%' class='FormData'>
@@ -182,6 +192,7 @@ elseif ($a == 1)  {
 		</tr>
 		<tr>
 		<th>&nbsp;</th>
+		<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 		<td><input type='submit' name='add' value='".$langAdd."' /></td>
 		</tr>
 		</tbody>
@@ -192,7 +203,7 @@ elseif ($a == 1)  {
 }
 // Delete faculty
 elseif ($a == 2) {
-        $c = intval($_GET['c']);
+	$c = intval($_GET['c']);
 	$s=mysql_query("SELECT * from cours WHERE faculteid=$c");
 	// Check for existing courses of a faculty
 	if (mysql_num_rows($s) > 0)  {
@@ -204,40 +215,45 @@ elseif ($a == 2) {
 		mysql_query("DELETE from faculte WHERE id=$c");
 		$tool_content .= "<p>$langErase</p><br />";
 	}
-	$tool_content .= "<br><p align='right'><a href='$_SERVER[PHP_SELF]'>".$langBack."</a></p>";
+	$tool_content .= "<br><p align='right'><a href='$_SERVER[PHP_SELF]'>".$langBack."</a></p>";	
 }
 // Edit a faculte
 elseif ($a == 3)  {
-        $c = @intval($_REQUEST['c']);
+	
+	$c = @intval($_REQUEST['c']);
 	if (isset($_POST['edit'])) {
 		// Check for empty fields
-                $faculte = $_POST['faculte'];
+				$faculte = $_POST['faculte'];
 		if (empty($faculte)) {
 			$tool_content .= "<p>".$langEmptyFaculte."</p><br>";
 			$tool_content .= "<p align='right'><a href='$_SERVER[PHP_SELF]?a=3&c=$c'>$langReturnToEditFaculte</a></p>";
 			}
 		// Check if faculte name already exists
 		elseif (mysql_num_rows(mysql_query("SELECT * from faculte WHERE id <> $c AND name=" .
-                                                   autoquote($faculte))) > 0) {
+												autoquote($faculte))) > 0) {
 			$tool_content .= "<p>".$langFaculteExists."</p><br>";
 			$tool_content .= "<p align='right'><a href='$_SERVER[PHP_SELF]?a=3&amp;c=$c'>$langReturnToEditFaculte</a></p>";
 		} else {
-		// OK Update the faculte
-			mysql_query("UPDATE faculte SET name = " .
-                                    autoquote($faculte) . " WHERE id=$c")
-				or die ($langNoSuccess);
-		// For backwards compatibility update cours and cours_facult also
-			db_query("UPDATE cours SET faculte = " .
-                                    autoquote($faculte) . " WHERE faculteid=$c")
-				or die ($langNoSuccess);
-			db_query("UPDATE cours_faculte SET faculte = " .
-                                    autoquote($faculte) . " WHERE facid=$c")
-				or die ($langNoSuccess);
-			$tool_content .= "<p>$langEditFacSucces</p><br>";
+			
+			if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+			// OK Update the faculte
+				mysql_query("UPDATE faculte SET name = " .
+										autoquote($faculte) . " WHERE id=$c")
+					or die ($langNoSuccess);
+			// For backwards compatibility update cours and cours_facult also
+				db_query("UPDATE cours SET faculte = " .
+										autoquote($faculte) . " WHERE faculteid=$c")
+					or die ($langNoSuccess);
+				db_query("UPDATE cours_faculte SET faculte = " .
+										autoquote($faculte) . " WHERE facid=$c")
+					or die ($langNoSuccess);
 			}
+			$tool_content .= "<p>$langEditFacSucces</p><br>";
+		}
 	} else {
 		// Get faculte information
-                $c = intval($_GET['c']);
+		$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+		$c = intval($_GET['c']);
 		$sql = "SELECT code, name FROM faculte WHERE id=$c";
 		$result = mysql_query($sql);
 		$myrow = mysql_fetch_array($result);
@@ -260,6 +276,7 @@ elseif ($a == 3)  {
 		<tr>
 		<th>&nbsp;</th>
 		<td><input type='hidden' name='c' value='$c' />
+		<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 		<input type='submit' name='edit' value='$langAcceptChanges' />
 		</td>
 		</tr>
@@ -267,9 +284,8 @@ elseif ($a == 3)  {
 		</table>
 		</form>";
 	}
-$tool_content .= "<br /><p align='right'><a href='$_SERVER[PHP_SELF]'>".$langBack."</a></p>";
+	$tool_content .= "<br /><p align='right'><a href='$_SERVER[PHP_SELF]'>".$langBack."</a></p>";
 }
-
 /*****************************************************************************
 		DISPLAY HTML
 ******************************************************************************/

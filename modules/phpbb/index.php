@@ -83,26 +83,78 @@ if ($is_adminOfCourse || $is_admin) {
 	<li><a href='../forum_admin/forum_admin.php'>$langAdm</a></li>
 	</ul></div><br />";
 }
-
+$pdoNotify = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));
 if(isset($forumcatnotify)) { // modify forum category notification
+		$forumcatnotify = escapeSimple($forumcatnotify);
+		$uid = escapeSimple($uid);
+		$cat_id = escapeSimple($cat_id);
+		$cours_id = escapeSimple($cours_id);
+		//echo '<script type="text/javascript">alert("here");</script>';
 		$rows = mysql_num_rows(db_query("SELECT * FROM forum_notify 
 			WHERE user_id = $uid AND cat_id = $cat_id AND course_id = $cours_id", $mysqlMainDb));
-		if ($rows > 0) {
-			db_query("UPDATE forum_notify SET notify_sent = '$forumcatnotify' 
-				WHERE user_id = $uid AND cat_id = $cat_id AND course_id = $cours_id", $mysqlMainDb);
+
+	if ($rows > 0) {
+			$sql = $pdoNotify -> prepare("UPDATE forum_notify SET notify_sent = ?
+			WHERE user_id = ? AND cat_id = ? AND course_id = ? ");
+			$sql->bindParam(1, $forumcatnotify);
+			$sql->bindParam(2, $uid);
+			$sql->bindParam(3, $cat_id);
+			$sql->bindParam(4, $cours_id);
+			$sql->execute(); 
+
+			// db_query("UPDATE forum_notify SET notify_sent = '$forumcatnotify' 
+			// 	WHERE user_id = $uid AND cat_id = $cat_id AND course_id = $cours_id", $mysqlMainDb);
 	} else {
-		db_query("INSERT INTO forum_notify SET user_id = $uid,
-		cat_id = $cat_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
+
+		$uid = escapeSimple($uid);
+		$cat_id = escapeSimple($cat_id);
+		$cours_id = escapeSimple($cours_id);
+
+		$sql = $pdoNotify -> prepare("INSERT INTO forum_notify SET user_id = ?,
+		cat_id = ?, notify_sent = ?, course_id = ?");
+			$one = 1;
+			$sql->bindParam(1, $uid);
+			$sql->bindParam(2, $cat_id);
+			$sql->bindParam(3, $one);
+			$sql->bindParam(4, $cours_id);
+			$sql->execute(); 
+
+		// db_query("INSERT INTO forum_notify SET user_id = $uid,
+		// cat_id = $cat_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
 	}
 } elseif(isset($forumnotify)) { // modify forum notification
+	$forumnotify = escapeSimple($forumnotify);
+	$uid = escapeSimple($uid);
+	$forum_id = escapeSimple($forum_id);
+	$cours_id = escapeSimple($cours_id);
+
 	$rows = mysql_num_rows(db_query("SELECT * FROM forum_notify 
 		WHERE user_id = $uid AND forum_id = $forum_id AND course_id = $cours_id", $mysqlMainDb));
 	if ($rows > 0) {
-		db_query("UPDATE forum_notify SET notify_sent = '$forumnotify' 
-			WHERE user_id = $uid AND forum_id = $forum_id AND course_id = $cours_id", $mysqlMainDb);
+		
+		$sql = $pdoNotify -> prepare("UPDATE forum_notify SET notify_sent = ?
+			WHERE user_id = ? AND forum_id = ? AND course_id = ? ");
+			$sql->bindParam(1, $forumnotify);
+			$sql->bindParam(2, $uid);
+			$sql->bindParam(3, $forum_id);
+			$sql->bindParam(4, $cours_id);
+			$sql->execute(); 
+
+		// db_query("UPDATE forum_notify SET notify_sent = '$forumnotify' 
+		// 	WHERE user_id = $uid AND forum_id = $forum_id AND course_id = $cours_id", $mysqlMainDb);
 	} else {
-		db_query("INSERT INTO forum_notify SET user_id = $uid,
-		forum_id = $forum_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
+
+		$sql = $pdoNotify -> prepare("INSERT INTO forum_notify SET user_id = ?,
+		forum_id = ?, notify_sent = ?, course_id = ?");
+			$one = 1;
+			$sql->bindParam(1, $uid);
+			$sql->bindParam(2, $forum_id);
+			$sql->bindParam(3, $one);
+			$sql->bindParam(4, $cours_id);
+			$sql->execute();
+
+		// db_query("INSERT INTO forum_notify SET user_id = $uid,
+		// forum_id = $forum_id, notify_sent = 1, course_id = $cours_id", $mysqlMainDb);
 	}
 }
 
@@ -129,7 +181,9 @@ if ($total_categories) {
 	</tr>
 	</thead>";
 
+
 	if (isset($viewcat)) {
+		$viewcat = escapeSimple($viewcat);
 		if (!$viewcat) {
 			$viewcat = -1;
 		}
@@ -161,6 +215,11 @@ if ($total_categories) {
 		}
 		$title = stripslashes($categories[$i]["cat_title"]);
 		$catNum = $categories[$i]["cat_id"];
+
+		$uid = escapeSimple($uid);
+		$catNum = escapeSimple($catNum);
+		$cours_id = escapeSimple($cours_id);
+
 		list($action_notify) = mysql_fetch_row(db_query("SELECT notify_sent FROM forum_notify 
 				WHERE user_id = $uid AND cat_id = $catNum AND course_id = $cours_id", $mysqlMainDb));
 		if (!isset($action_notify)) {
@@ -211,6 +270,10 @@ if ($total_categories) {
 				$tool_content .= "<td>";
 				$forum = $forum_row[$x]["forum_id"];
 				if ($is_adminOfCourse) { // admin
+					
+					$forum = escapeSimple($forum);
+					$uid = escapeSimple($uid);
+
 					$sqlTutor = db_query("SELECT id FROM student_group
 						WHERE forumId='$forum' AND tutor='$uid'", $currentCourseID );
 					$countTutor = mysql_num_rows($sqlTutor);
@@ -244,6 +307,10 @@ if ($total_categories) {
 				} else {
 					$tool_content .= "<font color='#CAC3B5'>$langNoPosts</font></td>";
 				}
+				$uid = escapeSimple($uid);
+				$forum = escapeSimple($forum);
+				$cours_id = escapeSimple($cours_id);
+
 				list($forum_action_notify) = mysql_fetch_row(db_query("SELECT notify_sent FROM forum_notify 
 					WHERE user_id = $uid AND forum_id = $forum AND course_id = $cours_id", $mysqlMainDb));
 				if (!isset($forum_action_notify)) {

@@ -75,20 +75,26 @@ if (isset($search) && ($search=="yes")) {
 }
 // Update course status
 if (isset($submit))  {
-  // Update query
-	$sql = mysql_query("UPDATE cours SET visible='$formvisible' WHERE code='".mysql_real_escape_string($_GET['c'])."'");
-	// Some changes occured
-	if (mysql_affected_rows() > 0) {
-		$tool_content .= "<p>".$langCourseStatusChangedSuccess."</p>";
-	}
-	// Nothing updated
-	else {
-		$tool_content .= "<p>".$langNoChangeHappened."</p>";
+
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){
+	
+		// Update query
+		$sql = mysql_query("UPDATE cours SET visible='$formvisible' WHERE code='".mysql_real_escape_string($_GET['c'])."'");
+		// Some changes occured
+		if (mysql_affected_rows() > 0) {
+			$tool_content .= "<p>".$langCourseStatusChangedSuccess."</p>";
+		}
+		// Nothing updated
+		else {
+			$tool_content .= "<p>".$langNoChangeHappened."</p>";
+		}
 	}
 
 }
 // Display edit form for course status
 else {
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+
 	// Get course information
 	$row = mysql_fetch_array(mysql_query("SELECT * FROM cours WHERE code='".mysql_real_escape_string($_GET['c'])."'"));
 	$visible = $row['visible'];
@@ -114,6 +120,7 @@ else {
 	</tr>
 	<tr>
 	<th>&nbsp;</th>
+	<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
 	<td colspan=\"2\"><input type='submit' name='submit' value='$langModify'></td>
 	</tr>
 	</tbody></table>

@@ -44,9 +44,13 @@ function addlinkcategory($type)
 		global $langGiveURL;
 		global $langLinkAdded;
 
-		$urllink=trim($urllink);
+		// $urllink=trim($urllink);
 		$title=trim($title);
 		$description=trim($description);
+
+		$urllink = htmlspecialchars($urllink, ENT_QUOTES);
+		$title = htmlspecialchars($title, ENT_QUOTES);
+		$description = htmlspecialchars($description, ENT_QUOTES);
 
 		// if title is empty, an error occurs
 		if(empty($urllink))
@@ -58,22 +62,36 @@ function addlinkcategory($type)
 		// if the title is empty, we use the url as the title
 		else
 		{
+			
+			//echo '<script type="text/javascript">alert("'.$urllink.'");</script>';
+
 			if(empty($title))
 			{
 				$title=$urllink;
 			}
 
 			// we check weither the $url starts with http://, if not we add this
-			if(strstr('://', $urllink) === false) {
+			if(strstr($urllink, '://') == false) {
 				$urllink = "http://" . $urllink;
 			}
+			//echo '<script type="text/javascript">alert("'.$urllink.'");</script>';
 
+
+			$selectcategory	= escapeSimple($selectcategory);
 			// looking for the largest ordre number for this category
 			$result=db_query("SELECT MAX(ordre) FROM  `".$tbl_link."` WHERE category='$selectcategory'", $dbname);
 
 			list($orderMax)=mysql_fetch_row($result);
 
 			$ordre=$orderMax+1;
+
+			$title	= escapeSimple($title);
+			$description	= escapeSimple($description);
+			$selectcategory	= escapeSimple($selectcategory);
+			$ordre	= escapeSimple($ordre);
+
+			$urllink = escapeSimple($urllink);
+			//$urllink = "http://" . $urllink;
 
 			$sql="INSERT INTO `".$tbl_link."` (url, titre, description, category,ordre) VALUES ('$urllink','$title','$description','$selectcategory','$ordre')";
 			$catlinkstatus=$langLinkAdded;
@@ -90,6 +108,8 @@ function addlinkcategory($type)
 		global $langGiveCategoryName;
 
 		$categoryname=trim($categoryname);
+		$categoryname = htmlspecialchars($categoryname, ENT_QUOTES);
+		$description = htmlspecialchars($description, ENT_QUOTES);
 
 		if(empty($categoryname))
 		{
@@ -98,12 +118,17 @@ function addlinkcategory($type)
 		}
 		else
 		{
+			$tbl_categories	= escapeSimple($tbl_categories);
 			// looking for the largest ordre number for this category
 			$result = db_query("SELECT MAX(ordre) FROM  `".$tbl_categories."`" , $dbname);
 
 			list($orderMax) = mysql_fetch_row($result);
 
 			$ordre=$orderMax+1;
+
+			$categoryname	= escapeSimple($categoryname);
+			$description	= escapeSimple($description);
+			$ordre	= escapeSimple($ordre);
 
 			$sql="INSERT INTO `".$tbl_categories."` (categoryname, description, ordre) VALUES ('$categoryname','$description', '$ordre')";
 
@@ -126,10 +151,13 @@ function deletelinkcategory($type)
 	global $tool_content;
 	global $dbname;
 
+	$tbl_categories	= escapeSimple($tbl_categories);
+
 	if ($type=="link")
 	{
 		global $id;
 		global $langLinkDeleted;
+		$id	= escapeSimple($id);
 		$sql="DELETE FROM `".$tbl_link."` WHERE id='".$id."'";
 		$catlinkstatus=$langLinkDeleted;
 		unset($id);
@@ -138,6 +166,7 @@ function deletelinkcategory($type)
 	{
 		global $id;
 		global $langCategoryDeleted;
+		$id	= escapeSimple($id);
 		// first we delete the category itself and afterwards all the links of this category.
 		$sql="DELETE FROM `".$tbl_categories."` WHERE id='".$id."'";
 		db_query($sql, $dbname);
@@ -170,6 +199,7 @@ function editlinkcategory($type)
 		// this is used to populate the link-form with the info found in the database
 		if (!$submitLink)
 		{
+			$id	= escapeSimple($id);
 			$sql="SELECT * FROM `".$tbl_link."` WHERE id='".$id."'";
 			$result=db_query($sql, $dbname);
 			if ($myrow=mysql_fetch_array($result))
@@ -180,11 +210,25 @@ function editlinkcategory($type)
 				$category = $myrow["category"];
 			}
 		}
+
+		$urllink = htmlspecialchars($urllink, ENT_QUOTES);
+		$title = htmlspecialchars($title, ENT_QUOTES);
+		$description = htmlspecialchars($description, ENT_QUOTES);
+		$category = htmlspecialchars($category, ENT_QUOTES);
+
 		// this is used to put the modified info of the link-form into the database
 		if ($submitLink)
 		{
 			global $langLinkModded;
 			global $selectcategory;
+
+
+			$title	= escapeSimple($title);
+			$description	= escapeSimple($description);
+			$selectcategory	= escapeSimple($selectcategory);
+			$id	= escapeSimple($id);
+			$urllink	= escapeSimple($urllink);
+			$urllink = "http://" . $urllink;
 
 			$sql="UPDATE `".$tbl_link."` set url='$urllink', titre='$title', description='$description', category='$selectcategory' WHERE id='".$id."'";
 			db_query($sql, $dbname);
@@ -197,6 +241,9 @@ function editlinkcategory($type)
 		global $description;
 		global $categoryname;
 
+		$tbl_categories	= escapeSimple($tbl_categories);
+		$id	= escapeSimple($id);
+
 		// this is used to populate the category-form with the info found in the database
 		if (!$submitCategory)
 		{
@@ -208,10 +255,21 @@ function editlinkcategory($type)
 				$description = $myrow["description"];
 			}
 		}
+
+		$categoryname = htmlspecialchars($categoryname, ENT_QUOTES);
+		$description = htmlspecialchars($description, ENT_QUOTES);
+		$id = htmlspecialchars($id, ENT_QUOTES);
+		
+
 		// this is used to put the modified info of the category-form into the database
 		if ($submitCategory)
 		{
 			global $langCategoryModded;
+			$tbl_categories	= escapeSimple($tbl_categories);
+			$categoryname	= escapeSimple($categoryname);
+			$description	= escapeSimple($description);
+			$id	= escapeSimple($id);
+
 			$sql="UPDATE `".$tbl_categories."` set categoryname='$categoryname', description='$description' WHERE id='".$id."'";
 			db_query($sql, $dbname);
 			$catlinkstatus=$langCategoryModded;
@@ -241,6 +299,7 @@ function makedefaultviewcode($locatie)
  */
 function getNumberOfLinks($catid){
 	global $tbl_link, $dbname;
+	$catid	= escapeSimple($catid);
 	$sqlLinks = "SELECT * FROM `".$tbl_link."` WHERE category='".$catid."' ORDER BY ordre DESC";
 	$result = db_query($sqlLinks, $dbname);
 	$numberoflinks=mysql_num_rows($result);
@@ -258,6 +317,8 @@ function showlinksofcategory($catid)
 	global $langDelete, $langUp, $langDown, $langModify, $langLinks, $langCategoryDelconfirm, $urlServer;
 	global $tool_content;
 	global $dbname;
+
+	$catid	= escapeSimple($catid);
 
 	$sqlLinks = "SELECT * FROM `".$tbl_link."` WHERE category='".$catid."' ORDER BY ordre DESC";
 	$result = db_query($sqlLinks, $dbname);
@@ -378,6 +439,9 @@ function movecatlink($catlinkid)
 	{
 		$movetable=$tbl_link;
 		//getting the category of the link
+		$thiscatlinkId	= escapeSimple($thiscatlinkId);
+		$movetable	= escapeSimple($movetable);
+
 		$sql="SELECT category from `".$movetable."` WHERE id='$thiscatlinkId'";
 		$result=db_query($sql, $dbname);
 		$catid=mysql_fetch_array($result);
@@ -390,10 +454,16 @@ function movecatlink($catlinkid)
 		if (!in_array(trim(strtoupper($sortDirection)), array('ASC', 'DESC'))) die("Bad sort direction used."); //sanity check of sortDirection var
 		if ($catmove=="true")
 		{
+
+
+			$sortDirection	= escapeSimple($sortDirection);
+
 			$sqlcatlinks="SELECT id, ordre FROM `".$movetable."` ORDER BY `ordre` $sortDirection";
 		}
 		else
 		{
+			$sortDirection	= escapeSimple($sortDirection);
+			$catid[0]	= escapeSimple($catid[0]);
 			$sqlcatlinks="SELECT id, ordre FROM `".$movetable."` WHERE category='".$catid[0]."' ORDER BY `ordre` $sortDirection";
 		}
 		$linkresult = db_query($sqlcatlinks, $dbname);
@@ -404,6 +474,11 @@ function movecatlink($catlinkid)
 			{
 				$nextlinkId=$sortrow["id"];
 				$nextlinkOrdre=$sortrow["ordre"];
+
+				$nextlinkOrdre	= escapeSimple($nextlinkOrdre);
+				$thiscatlinkId	= escapeSimple($thiscatlinkId);
+				$thislinkOrdre	= escapeSimple($thislinkOrdre);
+				$nextlinkId	= escapeSimple($nextlinkId);
 
 				db_query("UPDATE `".$movetable."`
 			             SET ordre = '$nextlinkOrdre'

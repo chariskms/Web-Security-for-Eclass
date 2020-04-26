@@ -63,6 +63,7 @@
  */
 function get_total_topics($forum_id, $thedb) {
 	global $langError;
+	$forum_id = escapeSimple($forum_id);
 	$sql = "SELECT count(*) AS total FROM topics WHERE forum_id = '$forum_id'";
 	if(!$result = db_query($sql, $thedb))
 		return($langError);
@@ -77,6 +78,7 @@ function get_total_topics($forum_id, $thedb) {
  * Also can return the number of users on the system.
  */ 
 function get_total_posts($id, $thedb, $type) {
+    $forum_id = escapeSimple($forum_id);
    switch($type) {
     case 'users':
       $sql = "SELECT count(*) AS total FROM users WHERE (user_id != -1) AND (user_level != -1)";
@@ -108,6 +110,7 @@ function get_total_posts($id, $thedb, $type) {
  */
 function get_last_post($id, $thedb, $type) {
    global $langError, $langNoPosts, $langFrom2;
+   $id = escapeSimple($id);
    switch($type) {
     case 'time_fix':
       $sql = "SELECT p.post_time FROM posts p WHERE p.topic_id = '$id' ORDER BY post_time DESC LIMIT 1";   
@@ -139,6 +142,7 @@ function get_last_post($id, $thedb, $type) {
  * users from simply editing the URL to post to a non-existant forum or topic
  */
 function does_exists($id, $thedb, $type) {
+    $id = escapeSimple($id);
 	switch($type) {
 		case 'forum':
 			$sql = "SELECT forum_id FROM forums WHERE forum_id = '$id'";
@@ -766,6 +770,7 @@ function undo_htmlspecialchars($input) {
  * Check if this is the first post in a topic. Used in editpost.php
  */
 function is_first_post($topic_id, $post_id, $thedb) {
+    $topic_id = escapeSimple($topic_id);
    $sql = "SELECT post_id FROM posts WHERE topic_id = '$topic_id' ORDER BY post_id LIMIT 1";
    if(!$r = db_query($sql, $thedb))
      return(0);
@@ -783,6 +788,8 @@ function is_first_post($topic_id, $post_id, $thedb) {
  */
 function check_priv_forum_auth($userid, $forumid, $is_posting, $db)
 {
+    $userid = escapeSimple($userid);
+	$forumid = escapeSimple($forumid);
 	$sql = "SELECT count(*) AS user_count FROM forum_access WHERE (user_id = $userid) AND (forum_id = $forumid) ";
 	
 	if ($is_posting)
@@ -845,6 +852,8 @@ function get_syslang_string($sys_lang, $string) {
 }
 
 function sync($thedb, $id, $type) {
+    $id = escapeSimple($id);
+	$type = escapeSimple($type);
    switch($type) {
    	case 'forum':
    		$sql = "SELECT max(post_id) AS last_post FROM posts WHERE forum_id = $id";
@@ -987,6 +996,7 @@ function toggle_icon($notify) {
 function forum_category($id) {
 	
 	global $currentCourseID;
+	$id = escapeSimple($id);
 	
 	if ($r = mysql_fetch_row(db_query("SELECT cat_id FROM forums WHERE forum_id=$id", $currentCourseID))) {
 		return $r[0];
@@ -999,6 +1009,7 @@ function forum_category($id) {
 function category_name($id) {
 	
 	global $currentCourseID;
+	$id = escapeSimple($id);
 	
 	if ($r = mysql_fetch_row(db_query("SELECT cat_title FROM catagories WHERE cat_id=$id", $currentCourseID))) {
 		return $r[0];

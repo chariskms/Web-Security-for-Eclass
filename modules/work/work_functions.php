@@ -77,13 +77,16 @@ function work_secret($id)
 {
 	global $currentCourseID, $workPath, $tool_content, $coursePath;
 	
+	$id = intval($id);
+	
 	$res = db_query("SELECT secret_directory FROM assignments WHERE id = '$id'", $currentCourseID);
 	if ($res) {
 		$secret = mysql_fetch_row($res);
 		if (!empty($secret[0])) {
 			$s = $secret[0];
 		} else {
-			$s = $id;
+			$s = md5(md5($id));
+			//$s = $id;
 		}
 		if (!is_dir("$workPath/$s")) {
 			if (!file_exists($coursePath)) {
@@ -104,6 +107,9 @@ function work_secret($id)
 function is_group_assignment($id)
 {
 	global $tool_content;
+	
+	$id = intval($id);
+	
 	$res = db_query("SELECT group_submissions FROM assignments WHERE id = '$id'");
 	if ($res) {
 		$row = mysql_fetch_row($res);
@@ -122,6 +128,11 @@ function is_group_assignment($id)
 // Doesn't delete files if they are the same with $new_filename
 function delete_submissions_by_uid($uid, $gid, $id, $new_filename = '')
 {
+    
+    $uid = intval($uid); 
+	$id = intval($id);
+	$gid = intval($gid);
+	
 	global $m, $tool_content;
 	$return="";
 	$res = db_query("SELECT * FROM assignment_submit WHERE
@@ -170,7 +181,7 @@ function greek_to_latin($string)
 function group_members($gid)
 {	
 	global $currentCourseID, $tool_content;
-
+    $gid = intval($gid);
 	$members = array();
 	$res = db_query("SELECT user FROM user_group WHERE team = '$gid'",
 		$currentCourseID);
@@ -186,6 +197,8 @@ function group_members($gid)
 function group_member_names($gid)
 {
 	global $tool_content;
+	
+	$gid = intval($gid);
 	$start = TRUE;
 	$names= '';
 	foreach (group_members($gid) as $id) {
@@ -207,6 +220,8 @@ function group_member_names($gid)
 function find_submission($uid, $id)
 {
 	global $tool_content;
+	$uid = intval($uid); 
+	$id = intval($id);
 	if (is_group_assignment($id)) {
 		$gid = user_group($uid);
 		$res = db_query("SELECT id FROM assignment_submit
@@ -232,7 +247,7 @@ function find_submission($uid, $id)
 function submission_grade($subid)
 {
 	global $m, $tool_content;
-
+    $subid = intval($subid); 
 	$res = mysql_fetch_row(db_query("SELECT grade, grade_comments
 		FROM assignment_submit WHERE id = '$subid'"));
 	if ($res) {
@@ -256,8 +271,11 @@ function submission_grade($subid)
 // assignments were found.
 function was_graded($uid, $id, $ret_val = FALSE)
 {
+	$uid = intval($uid); 
+	$id = intval($id);
 	global $tool_content;
 	$gid = user_group($uid);
+	$gid = intval($gid);
 	$res = db_query("SELECT * FROM assignment_submit
 			WHERE assignment_id = '$id'
 			AND (uid = '$uid' OR group_id = '$gid')");
@@ -281,7 +299,7 @@ function was_graded($uid, $id, $ret_val = FALSE)
 function show_submission_details($id)
 {
 	global $uid, $m, $currentCourseID, $langSubmittedAndGraded, $tool_content;
-
+    $id = intval($id);
 	$sub = mysql_fetch_array(
 		db_query("SELECT * FROM assignment_submit
 			WHERE id = '$id'"));
@@ -299,7 +317,7 @@ function show_submission_details($id)
 	if ($sub['uid'] != $uid) {
 		$sub_notice = "$m[submitted_by_other_member] ".
 			"<a href='../group/group_space.php?userGroupId=$sub[group_id]'>".
-			"$m[your_group]</a> (".uid_to_name($sub['uid']).")";
+			"$m[your_group]</a> (".uid_to_name(intval($sub['uid'])).")";
 	} else $sub_notice = "";
 	
 	$tool_content .= "
@@ -333,6 +351,10 @@ function show_submission_details($id)
 function was_submitted($uid, $gid, $id)
 {
 	global $tool_content;
+	$uid = intval($uid); 
+	$gid = intval($gid);
+	$id = intval($id);
+	
 	if (mysql_num_rows(db_query(
 		"SELECT id FROM assignment_submit WHERE assignment_id = '$id'
 			AND uid = '$uid'"))) {

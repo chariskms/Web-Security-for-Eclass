@@ -56,6 +56,7 @@
  *
  **/
 
+
 class Dropbox_Work {
 	var $id;
 	var $uploaderId;
@@ -108,18 +109,61 @@ class Dropbox_Work {
 		* Check if object exists already. If it does, the old object is used 
 		* with updated information (authors, descriptio, uploadDate)
 		*/
+		// $mysqlServer = "localhost";
+		// $mysqlUser = "root";
+		// $mysqlPassword = "csec";
+
+		// include_once("../config/config.php");
+		// echo '<script type="text/javascript">alert("'.$dropbox_cnf["fileTbl"].'");</script>';
+		// echo '<script type="text/javascript">alert("'.$currentCourseID.'");</script>';
+		 //$pdoDropbox = new PDO("mysql:host=$mysqlServer;dbname=$currentCourseID",$mysqlUser, $mysqlPassword);
+		//$sql = " ";
 		$this->isOldWork = FALSE;
 		if ($GLOBALS['language'] == 'greek') {
+
+			// $sql = $pdoDropbox -> prepare("SELECT id, DATE_FORMAT(uploadDate, '%d-%m-%Y / %H:%i')
+			// FROM ? WHERE filename = ?");
+
+			// $temp1 = $dropbox_cnf["fileTbl"];
+			// $temp2 = addslashes($this->filename);
+
+			// $sql->bindParam(1, $temp1);
+			// $sql->bindParam(2, $temp2);
+			// $result = $sql->execute(); 
+
+			$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+			$this->filename = escapeSimple($this->filename);
+
 			$sql="SELECT id, DATE_FORMAT(uploadDate, '%d-%m-%Y / %H:%i')
 				FROM `".$dropbox_cnf["fileTbl"]."` 
 				WHERE filename = '".addslashes($this->filename)."'";
 		} else {
+
+			// $sql = $pdoDropbox -> prepare("SELECT id, DATE_FORMAT(uploadDate, '%Y-%m-d% / %H:%i')
+			// FROM ? 
+			// WHERE filename = ?");
+
+			// $temp1 = $dropbox_cnf["fileTbl"];
+			// $temp2 = addslashes($this->filename);
+
+			// $sql->bindParam(1, $temp1);
+			// $sql->bindParam(2, $temp2);
+			// $result = $sql->execute(); 
+
+			$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+			$this->filename = escapeSimple($this->filename);
+
+
 			$sql="SELECT id, DATE_FORMAT(uploadDate, '%Y-%m-d% / %H:%i')
 				FROM `".$dropbox_cnf["fileTbl"]."` 
 				WHERE filename = '".addslashes($this->filename)."'";
 		}
-        	$result = db_query($sql,$currentCourseID);
-		$res = mysql_fetch_array($result);
+
+
+			$result = db_query($sql,$currentCourseID);
+			$res = mysql_fetch_array($result);
+		//$res = $sql->fetch(PDO::FETCH_ASSOC);
+
 		if ($res != FALSE) $this->isOldWork = TRUE;
 		
 		/*
@@ -128,15 +172,93 @@ class Dropbox_Work {
 		if ($this->isOldWork) {
 			$this->id = $res["id"];
 			$this->uploadDate = $res["uploadDate"];
+
+
+			// $sql = $pdoDropbox -> prepare("UPDATE ?
+			// SET filesize = ?
+			// , title = ?
+			// , description = ?
+			// , author = ?
+			// , lastUploadDate = ?
+			// WHERE id= ?");
+
+			// $temp1 = $dropbox_cnf["fileTbl"];
+			// $temp2 = addslashes($this->filesize);
+			// $temp3 = addslashes($this->title);
+			// $temp4 = addslashes($this->description);
+			// $temp5 = addslashes($this->author);
+			// $temp6 = addslashes($this->lastUploadDate);
+			// $temp7 = addslashes($this->id);
+
+			// $sql->bindParam(1, $temp1);
+			// $sql->bindParam(2, $temp2);
+			// $sql->bindParam(3, $temp3);
+			// $sql->bindParam(4, $temp4);
+			// $sql->bindParam(5, $temp5);
+			// $sql->bindParam(6, $temp6);
+			// $sql->bindParam(7, $temp7);
+			// $result = $sql->execute(); 
+
+
+			$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+			$this->filesize = escapeSimple($this->filesize);
+			$this->title = escapeSimple($this->title);
+			$this->description = escapeSimple($this->description);
+			$this->author = escapeSimple($this->author);
+			$this->lastUploadDate = escapeSimple($this->lastUploadDate);
+			$this->id = escapeSimple($this->id);
+
 		    $sql = "UPDATE `".$dropbox_cnf["fileTbl"]."`
 					SET filesize = '".addslashes($this->filesize)."'
 					, title = '".addslashes($this->title)."'
 					, description = '".addslashes($this->description)."'
 					, author = '".addslashes($this->author)."'
 					, lastUploadDate = '".addslashes($this->lastUploadDate)."'
-					WHERE id='".addslashes($this->id)."'";
+					WHERE id='".addslashes($this->id)."'";	
 			$result = db_query($sql);
+
+
+
 		} else {
+
+			// $this->uploadDate = $this->lastUploadDate;
+
+			// $sql = $pdoDropbox -> prepare("INSERT INTO ? 
+			// (uploaderId, filename, filesize, title, description, author, uploadDate, lastUploadDate)
+			// VALUES (?,?, ?, ?, ?, ?, ?, ?)");
+
+			// $temp1 = $dropbox_cnf["fileTbl"];
+			// $temp2 = addslashes($this->uploaderId);
+			// $temp3 = addslashes($this->filename);
+			// $temp4 = addslashes($this->filesize);
+			// $temp5 = addslashes($this->title);
+			// $temp6 = addslashes($this->description);
+			// $temp7 = addslashes($this->author);
+			// $temp8 = addslashes($this->uploadDate);
+			// $temp9 = addslashes($this->lastUploadDate);
+
+			// $sql->bindParam(1, $temp1);
+			// $sql->bindParam(2, $temp2);
+			// $sql->bindParam(3, $temp3);
+			// $sql->bindParam(4, $temp4);
+			// $sql->bindParam(5, $temp5);
+			// $sql->bindParam(6, $temp6);
+			// $sql->bindParam(7, $temp7);
+			// $sql->bindParam(8, $temp8);
+			// $sql->bindParam(9, $temp9);
+			// $result = $sql->execute();
+			// $this->id = $pdoDropbox->lastInsertId();
+
+			$this->uploaderId= escapeSimple($this->uploaderId);
+			$this->filename = escapeSimple($this->filename);
+			$this->filesize = escapeSimple($this->filesize);
+			$this->title = escapeSimple($this->title);
+			$this->description = escapeSimple($this->description);
+			$this->author = escapeSimple($this->author);
+			$this->uploadDate = escapeSimple($this->uploadDate);
+			$this->lastUploadDate = escapeSimple($this->lastUploadDate);
+			
+
 			$this->uploadDate = $this->lastUploadDate;
 			$sql="INSERT INTO `".$dropbox_cnf["fileTbl"]."` 
 				(uploaderId, filename, filesize, title, description, author, uploadDate, lastUploadDate)
@@ -149,21 +271,45 @@ class Dropbox_Work {
 						, '".addslashes($this->uploadDate)."'
 						, '".addslashes($this->lastUploadDate)."'
 						)";
-
         	$result = db_query($sql);		
 			$this->id = mysql_insert_id(); //get automatically inserted id
+
+
+
 		}
 		
 		
 		/*
 		* insert entries into person table
 		*/
+
+		// $sql = $pdoDropbox -> prepare("INSERT INTO ? 
+		// (fileId, personId)
+		// VALUES (?, ?)");
+
+		// $temp1 = $dropbox_cnf["personTbl"];
+		// $temp2 = addslashes($this->id);
+		// $temp3 = addslashes($this->uploaderId);
+
+		// $sql->bindParam(1, $temp1);
+		// $sql->bindParam(2, $temp2);
+		// $sql->bindParam(3, $temp3);
+
+		// $result = $sql->execute();
+
+		$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+		$this->id = escapeSimple($this->id);
+		$this->uploaderId = escapeSimple($this->uploaderId);
+
 		$sql="INSERT INTO `".$dropbox_cnf["personTbl"]."` 
 				(fileId, personId)
 				VALUES ('".addslashes($this->id)."'
 						, '".addslashes($this->uploaderId)."'
 						)";
-        $result = db_query($sql);	//if work already exists no error is generated
+		$result = db_query($sql);	//if work already exists no error is generated
+		
+
+
 	}
 	
 	function _createExistingWork ($id) {
@@ -180,6 +326,10 @@ class Dropbox_Work {
 		/*
 		* get the data from DB
 		*/
+
+		$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+		$id = escapeSimple($id);
+
 	if ($GLOBALS['language'] == 'greek') {
 		$sql="SELECT uploaderId, filename, filesize, title, description, author,
 			DATE_FORMAT(uploadDate, '%d-%m-%Y / %H:%i') AS uploadDate, 
@@ -193,8 +343,8 @@ class Dropbox_Work {
 			FROM `".$dropbox_cnf["fileTbl"]."`
 			WHERE id='".addslashes($id)."'";
 	}
-	        $result = db_query($sql, $currentCourseID);
-		$res = mysql_fetch_array($result);;
+	    $result = db_query($sql, $currentCourseID);
+		$res = mysql_fetch_array($result);
 		
 		/*
 		* Check if uploader is still in claroline system
@@ -280,16 +430,28 @@ class Dropbox_SentWork extends Dropbox_Work {
 		* insert data in dropbox_post and dropbox_person table for each recipient
 		*/
 		foreach ($this->recipients as $rec) {	
+
+			$dropbox_cnf["postTbl"] = escapeSimple($dropbox_cnf["postTbl"]);
+			$this->id = escapeSimple($this->id);
+			$rec["id"] = escapeSimple($rec["id"]);
+
 			$sql="INSERT INTO `".$dropbox_cnf["postTbl"]."` 
 				(fileId, recipientId)
 				VALUES ('".addslashes($this->id)."', '".addslashes($rec["id"])."')";
-	        $result = db_query($sql,$currentCourseID);	//if work already exists no error is generated
-						
+			$result = db_query($sql,$currentCourseID);	//if work already exists no error is generated
+			
+		
+			$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+			$this->id = escapeSimple($this->id);
+			$rec["id"] = escapeSimple($rec["id"]);
+			
 			//insert entries into person table
 			$sql="INSERT INTO `".$dropbox_cnf["personTbl"]."` (fileId, personId)
 				VALUES ('".addslashes($this->id)."', '".addslashes($rec["id"])."')";
         	// RH: do not add recipient in person table if mailing zip or just upload
 			if (!$justSubmit) $result = db_query($sql);	//if work already exists no error is generated
+
+
 		}
 	}
 	
@@ -313,6 +475,10 @@ class Dropbox_SentWork extends Dropbox_Work {
 		/*
 		* Fill in recipients array
 		*/
+
+		$dropbox_cnf["postTbl"] = escapeSimple($dropbox_cnf["postTbl"]);
+		$id = escapeSimple($id);
+
 		$this->recipients = array();
 		$sql="SELECT recipientId
 				FROM `".$dropbox_cnf["postTbl"]."`
@@ -362,6 +528,11 @@ class Dropbox_Person {
 		/*
 		* find all entries where this person is the recipient 
 		*/
+
+		$dropbox_cnf["postTbl"] = escapeSimple($dropbox_cnf["postTbl"]);
+		$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+		$this->userId = escapeSimple($this->userId);
+
 		$sql = "SELECT r.fileId FROM 
 				`".$dropbox_cnf["postTbl"]."` r
 				, `".$dropbox_cnf["personTbl"]."` p
@@ -376,6 +547,12 @@ class Dropbox_Person {
 		/*
 		* find all entries where this person is the sender/uploader
 		*/
+
+		$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+		$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+		$this->userId = escapeSimple($this->userId);
+
+
 		$sql = "SELECT f.id FROM `".$dropbox_cnf["fileTbl"]."` f, `".$dropbox_cnf["personTbl"]."` p 
 				WHERE f.uploaderId = '".addslashes($this->userId)."'
 				AND f.uploaderId = p.personId
@@ -478,6 +655,11 @@ class Dropbox_Person {
 		* Deletes all the received work of this person
 		*/
 		global $dropbox_cnf, $dropbox_lang, $currentCourseID;
+
+		$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+		$w->id = escapeSimple($w->id);
+		$this->userId = escapeSimple($this->userId);
+		
 	
 		//delete entries in person table concerning received works
 		foreach ($this->receivedWork as $w) {
@@ -503,6 +685,9 @@ class Dropbox_Person {
 		}
 		if (! $found) die($dropbox_lang["generalError"]);
 		
+		$dropbox_cnf["personTbl"]= escapeSimple($dropbox_cnf["personTbl"]);
+		$this->userId = escapeSimple($this->userId);
+		$id = escapeSimple($id);
 		//delete entries in person table concerning received works
 		db_query("DELETE FROM `".$dropbox_cnf["personTbl"]."` 
 			WHERE personId='".$this->userId."' AND fileId='".$id."'", $currentCourseID);
@@ -515,6 +700,10 @@ class Dropbox_Person {
 		* Deletes all the sent work of this person
 		*/
 		global $dropbox_cnf, $dropbox_lang, $currentCourseID;
+
+		$dropbox_cnf["personTbl"] = escapeSimple($dropbox_cnf["personTbl"]);
+		$w->id = escapeSimple($w->id);
+		$this->userId = escapeSimple($this->userId);
 	
 		//delete entries in person table concerning sent works
 		foreach ($this->sentWork as $w) {
@@ -540,6 +729,10 @@ class Dropbox_Person {
 			}
 		}
 		if (!$found) die($dropbox_lang["generalError"]);
+
+		$dropbox_cnf["personTbl"]= escapeSimple($dropbox_cnf["personTbl"]);
+		$this->userId = escapeSimple($this->userId);
+		$id = escapeSimple($id);
 		
 		//delete entries in person table concerning sent works
 		db_query("DELETE FROM `".$dropbox_cnf["personTbl"]."` 

@@ -67,71 +67,78 @@ $tool_content = "";
 		MAIN BODY
 ******************************************************************************/
 
-// Send email after form post
+$_POST['body_mail'] = htmlspecialchars($_POST['body_main'], ENT_QUOTES);
+	// Send email after form post
 if (isset($_POST['submit']) && ($_POST['body_mail'] != "") && ($_POST['submit'] == $langSend)) {
-	// Where to send the email
-	if ($_POST['sendTo'] == "0") {
-		// All users
-		$sql = mysql_query("SELECT DISTINCT email FROM user");
-	} elseif ($_POST['sendTo'] == "1") {
-		// Only professors
-		$sql = mysql_query("SELECT DISTINCT email FROM user where statut='1'");
-	} else { die(); } // invalid sendTo var
+	if ($_SESSION['csrfToken'] === $_POST['csrfToken']){	
+		// Where to send the email
+		if ($_POST['sendTo'] == "0") {
+			// All users
+			$sql = mysql_query("SELECT DISTINCT email FROM user");
+		} elseif ($_POST['sendTo'] == "1") {
+			// Only professors
+			$sql = mysql_query("SELECT DISTINCT email FROM user where statut='1'");
+		} else { die(); } // invalid sendTo var
 
-	// Send email to all addresses
-	while ($m = mysql_fetch_array($sql)) {
-		$to = $m[0];
-		$emailsubject = $infoabouteclass;
-		$emailbody = "".$_POST['body_mail']."
+		// Send email to all addresses
+		while ($m = mysql_fetch_array($sql)) {
+			$to = $m[0];
+			$emailsubject = $infoabouteclass;
+			$emailbody = "".$_POST['body_mail']."
 
-$langManager $siteName
-$administratorName $administratorSurname
-$langTel $telephone
-$langEmail : $emailhelpdesk
-";
-		if (!send_mail('', '', '', $to,
-			$emailsubject, $emailbody, $charset)) {
-				$tool_content .= "<p class=\"caution_small\">".$langEmailNotSend." ".$to."!</p>";
+	$langManager $siteName
+	$administratorName $administratorSurname
+	$langTel $telephone
+	$langEmail : $emailhelpdesk
+	";
+			if (!send_mail('', '', '', $to,
+				$emailsubject, $emailbody, $charset)) {
+					$tool_content .= "<p class=\"caution_small\">".$langEmailNotSend." ".$to."!</p>";
+			}
 		}
+		// Display result and close table correctly
+		$tool_content .= "<p class=\"success_small\">$emailsuccess</p>";
 	}
-	// Display result and close table correctly
-	$tool_content .= "<p class=\"success_small\">$emailsuccess</p>";
 } else {
-        // Display form to administrator
-        $tool_content .= "
-<form action='$_SERVER[PHP_SELF]' method='post'>
-  <table class='FormData'>
-  <tbody>
-  <tr>
-    <th class='left'>$typeyourmessage</th>
-	<td><textarea class='auth_input' name='body_mail' rows='10' cols='60'></textarea></td>
-  </tr>
-  <tr>
-    <th class='left'>$langSendMessageTo</th>
-    <td><select name='sendTo'>
-          <option value='1'>$langProfOnly</option>
-          <option value='0'>$langToAllUsers</option>
-        </select>
-    </td>
-  </tr>
-  <tr>
-    <th>&nbsp;</th>
-    <td><input type=\"submit\" name=\"submit\" value=\"$langSend\"></input></td>
-  </tr>
-  </tbody>
-  </table>
-</form>";
+	$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+	// Display form to administrator
+	$tool_content .= "
+	<form action='$_SERVER[PHP_SELF]' method='post'>
+	<table class='FormData'>
+	<tbody>
+	<tr>
+		<th class='left'>$typeyourmessage</th>
+		<td><textarea class='auth_input' name='body_mail' rows='10' cols='60'></textarea></td>
+	</tr>
+	<tr>
+		<th class='left'>$langSendMessageTo</th>
+		<td><select name='sendTo'>
+			<option value='1'>$langProfOnly</option>
+			<option value='0'>$langToAllUsers</option>
+			</select>
+		</td>
+	</tr>
+	<tr>
+		<th>&nbsp;</th>
+		<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
+		<td><input type=\"submit\" name=\"submit\" value=\"$langSend\"></input></td>
+	</tr>
+	</tbody>
+	</table>
+	</form>";
 
-}
-// Display link back to index.php
-$tool_content .= "<p>&nbsp;</p><p align=\"right\"><a href=\"index.php\">".$langBack."</a></p>";
+	}
 
-/*****************************************************************************
-		DISPLAY HTML
-******************************************************************************/
-// Call draw function to display the HTML
-// $tool_content: the content to display
-// 3: display administrator menu
-// admin: use tool.css from admin folder
-draw($tool_content,3,'admin');
+	// Display link back to index.php
+	$tool_content .= "<p>&nbsp;</p><p align=\"right\"><a href=\"index.php\">".$langBack."</a></p>";
+
+	/*****************************************************************************
+			DISPLAY HTML
+	******************************************************************************/
+	// Call draw function to display the HTML
+	// $tool_content: the content to display
+	// 3: display administrator menu
+	// admin: use tool.css from admin folder
+	draw($tool_content,3,'admin');
+
 ?>

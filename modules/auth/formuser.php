@@ -55,6 +55,8 @@ if (!email_seems_valid($usermail)) {
         $all_set = false;
 }
 
+
+
 if (isset($_POST['submit']) and !$all_set) {
 
         // form submitted but required fields empty

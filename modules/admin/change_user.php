@@ -39,41 +39,47 @@ $navigation[] = array("url" => "index.php", "name" => $langAdmin);
 $tool_content = '';
 
 if (isset($_POST['username'])) {
-	$result = db_query("SELECT user_id, nom, username, password, prenom, statut, email, iduser is_admin, perso, lang
-                FROM user LEFT JOIN admin
-                ON user.user_id = admin.iduser
-                WHERE username=" . autoquote($_POST['username']));
-	if (mysql_num_rows($result) > 0) {
-                $myrow = mysql_fetch_array($result);
-                $_SESSION['uid'] = $myrow["user_id"];
-                $_SESSION['nom'] = $myrow["nom"];
-                $_SESSION['prenom'] = $myrow["prenom"];
-                $_SESSION['statut'] = $myrow["statut"];
-                $_SESSION['email'] = $myrow["email"];
-                $_SESSION['is_admin'] = $myrow["is_admin"];
-                $userPerso = $myrow["perso"];
-                $userLanguage = $myrow["lang"];
-	        if ($userPerso == "yes" and isset($_SESSION['perso_is_active'])) {
-        		$_SESSION['user_perso_active'] = false;
+        $_POST['username'] = q($_POST['username']);
+        if($_SESSION['csrfToken'] === $_POST['csrfToken']){
+                $username = $_POST['username'];
+                $result = db_query("SELECT user_id, nom, username, password, prenom, statut, email, iduser is_admin, perso, lang
+                        FROM user LEFT JOIN admin
+                        ON user.user_id = admin.iduser
+                        WHERE username=" . autoquote($username));
+                if (mysql_num_rows($result) > 0) {
+                        $myrow = mysql_fetch_array($result);
+                        $_SESSION['uid'] = $myrow["user_id"];
+                        $_SESSION['nom'] = $myrow["nom"];
+                        $_SESSION['prenom'] = $myrow["prenom"];
+                        $_SESSION['statut'] = $myrow["statut"];
+                        $_SESSION['email'] = $myrow["email"];
+                        $_SESSION['is_admin'] = $myrow["is_admin"];
+                        $userPerso = $myrow["perso"];
+                        $userLanguage = $myrow["lang"];
+                        if ($userPerso == "yes" and isset($_SESSION['perso_is_active'])) {
+                                $_SESSION['user_perso_active'] = false;
+                        } else {
+                                $_SESSION['user_perso_active'] = true;
+                        }
+                        if ($userLanguage == "en") {
+                                $_SESSION['langswitch'] = "english";
+                                $langChangeLang = $_SESSION['langLinkText'] = "Ελληνικά";
+                                $switchLangURL = $_SESSION['langLinkURL'] = "?localize=el";
+                        } elseif ($userLanguage == "el") {
+                                $_SESSION['langswitch'] = "greek";
+                                $langChangeLang = $_SESSION['langLinkText'] = "English";
+                                $switchLangURL = $_SESSION['langLinkURL'] = "?localize=en";
+                        }
+                        $language = $_SESSION['langswitch'];
+                        header('Location: ' . $urlServer);
+                        exit;
                 } else {
-        		$_SESSION['user_perso_active'] = true;
+                        $tool_content = "<div class='caution_small'>" . sprintf($langChangeUserNotFound, $_POST['username']) . "</div>";
                 }
-        	if ($userLanguage == "en") {
-	        	$_SESSION['langswitch'] = "english";
-	        	$langChangeLang = $_SESSION['langLinkText'] = "Ελληνικά";
-	        	$switchLangURL = $_SESSION['langLinkURL'] = "?localize=el";
-	        } elseif ($userLanguage == "el") {
-        		$_SESSION['langswitch'] = "greek";
-	        	$langChangeLang = $_SESSION['langLinkText'] = "English";
-		        $switchLangURL = $_SESSION['langLinkURL'] = "?localize=en";
-        	}
-		$language = $_SESSION['langswitch'];
-                header('Location: ' . $urlServer);
-                exit;
-        } else {
-                $tool_content = "<div class='caution_small'>" . sprintf($langChangeUserNotFound, $_POST['username']) . "</div>";
         }
 } 
-
-$tool_content .= "<form action='$_SERVER[PHP_SELF]' method='post'>$langUsername: <input type='text' name='username' /></form>";
+$_SESSION['csrfToken'] = substr(base_convert(sha1(uniqid(mt_rand())), 16, 36), 0, 32);
+$tool_content .= "<form action='$_SERVER[PHP_SELF]' method='post'>$langUsername: <input type='text' name='username' />
+<input type='hidden' name='csrfToken' value='".@$_SESSION['csrfToken']."'/>
+</form>";
 draw($tool_content,3,'admin');

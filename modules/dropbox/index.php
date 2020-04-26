@@ -165,6 +165,11 @@ tCont2;
 	|| $dropbox_cnf["allowStudentToStudent"])  // RH: also if option is set
 
 	{
+		$dropbox_cnf["userTbl"] = escapeSimple($dropbox_cnf["userTbl"]);
+		$dropbox_cnf["courseUserTbl"] = escapeSimple($dropbox_cnf["courseUserTbl"]);
+		$dropbox_cnf["cid"] = escapeSimple($dropbox_cnf["cid"]);
+		$uid = escapeSimple($uid);
+
 		// select all users except yourself
 		$sql = "SELECT DISTINCT u.user_id , CONCAT(u.nom,' ', u.prenom) AS name
         	FROM `" . $dropbox_cnf["userTbl"] . "` u, `" . $dropbox_cnf["courseUserTbl"] . "` cu
@@ -178,6 +183,13 @@ tCont2;
 	else
 	{
 		// select all the teachers except yourself
+
+		$dropbox_cnf["userTbl"] = escapeSimple($dropbox_cnf["userTbl"]);
+		$dropbox_cnf["courseUserTbl"] = escapeSimple($dropbox_cnf["courseUserTbl"]);
+		$dropbox_cnf["cid"] = escapeSimple($dropbox_cnf["cid"]);
+		$uid = escapeSimple($uid);
+
+
 		$sql = "SELECT DISTINCT u.user_id , CONCAT(u.nom,' ', u.prenom) AS name
         	FROM `" . $dropbox_cnf["userTbl"] . "` u, `" . $dropbox_cnf["courseUserTbl"] . "` cu
         	WHERE cu.cours_id = $dropbox_cnf[cid]

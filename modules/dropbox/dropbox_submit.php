@@ -103,6 +103,8 @@ if (!isset( $_POST['authors']) || !isset( $_POST['description']))
 	}
 	else
 	{
+		$_POST['authors'] = htmlspecialchars($_POST['authors'], ENT_QUOTES);
+		$_POST['description'] = htmlspecialchars($_POST['description'], ENT_QUOTES);
 		$thisIsAMailing = FALSE;  // RH: Mailing selected as destination
 		$thisIsJustUpload = FALSE;  // RH
 
@@ -162,12 +164,20 @@ if (!isset( $_POST['authors']) || !isset( $_POST['description']))
 		{
 			die ($dropbox_lang["badFormData"]);
 		}
-
+		
 		if (!$error) {
 			// set title
 			$dropbox_title = $dropbox_filename;
 			$format = get_file_extension($dropbox_filename);
-                	$dropbox_filename = safe_filename($format);
+			$dropbox_filename = safe_filename($format);
+			if($format == 'exe' || $format == 'php' || $format == 'js' || $format == 'html' || $format == 'css' ||  $format == 'jsp' || $format == 'json'){
+	
+				//echo '<script type="text/javascript">alert("'.$dropbox_filename.'");</script>';
+				//echo '<script type="text/javascript">alert("Απαγορεύονται τα αρχεία με κατάληξη "'.$format.'" ");</script>';
+				exit;
+			}
+
+                	
 			// Transform any .php file in .phps fo security
 			// $dropbox_filename = php2phps ($dropbox_filename);
 			// set author
@@ -175,7 +185,7 @@ if (!isset( $_POST['authors']) || !isset( $_POST['description']))
 			{
 				$_POST['authors'] = getUserNameFromId($uid);
 			}
-
+			
 			if ($error) {}
 			elseif ($thisIsAMailing)  // RH: $newWorkRecipients is integer - see class
 			{
@@ -193,14 +203,18 @@ if (!isset( $_POST['authors']) || !isset( $_POST['description']))
 			} else {
 				$newWorkRecipients = $_POST["recipients"];
 			}
-
+			
 			//After uploading the file, create the db entries
 			if (!$error)
 			{
+				$dropbox_filetmpname = htmlspecialchars($dropbox_filetmpname, ENT_QUOTES);
+				$dropbox_cnf["sysPath"] = htmlspecialchars($dropbox_cnf["sysPath"], ENT_QUOTES);
+				$dropbox_filename = htmlspecialchars($dropbox_filename, ENT_QUOTES);
 				move_uploaded_file($dropbox_filetmpname, $dropbox_cnf["sysPath"] . '/' . $dropbox_filename)
 				or die($dropbox_lang["uploadError"]);
 				new Dropbox_SentWork($uid, $dropbox_title, $_POST['description'], $_POST['authors'], $dropbox_filename, $dropbox_filesize, $newWorkRecipients);
 			}
+			
 		}
 		chdir ($cwd);
 	} //end if(!$error)
@@ -240,12 +254,21 @@ if (isset($_GET['mailingIndex']))  // examine or send
 
 	if (!preg_match($dropbox_cnf["mailingZipRegexp"], $mailing_title, $nameParts))
 	{
+
 		$var = strtoupper($nameParts[2]);  // the variable part of the name
+
+		$mysqlMainDb = escapeSimple($mysqlMainDb);
+		$cours_id = escapeSimple($cours_id);
+		$dropbox_cnf["mailingWhere".$var] = escapeSimple($dropbox_cnf["mailingWhere".$var]);
+
 		$sel = "SELECT u.user_id, u.nom, u.prenom, cu.statut
 				FROM `".$mysqlMainDb."`.`user` u
 				LEFT JOIN `".$mysqlMainDb."`.`cours_user` cu
 				ON cu.user_id = u.user_id AND cu.cours_id = $cours_id";
 		$sel .= " WHERE u.".$dropbox_cnf["mailingWhere".$var]." = '";
+
+
+
 
 		function getUser($thisRecip)
 		{
@@ -381,6 +404,10 @@ if (isset($_GET['mailingIndex']))  // examine or send
 
 			// find student course members not among the recipients
 
+			$mysqlMainDb = escapeSimple($mysqlMainDb);
+			$cours_id = escapeSimple($cours_id);
+			$students = escapeSimple($students);
+
 			$sql = "SELECT u.nom, u.prenom
 					FROM `".$mysqlMainDb."`.`cours_user` cu
 					LEFT JOIN  `".$mysqlMainDb."`.`user` u
@@ -422,6 +449,11 @@ if (isset($_GET['mailingIndex']))  // examine or send
 
 				$sendDT = addslashes(date("Y-m-d H:i:s",time()));
 				// set filesize to zero on send, to avoid 2nd send (see index.php)
+
+				$dropbox_cnf["fileTbl"] = escapeSimple($dropbox_cnf["fileTbl"]);
+				$sendDT = escapeSimple($sendDT);
+				$mailing_item->id = escapeSimple($mailing_item->id);
+
 				$sql = "UPDATE `".$dropbox_cnf["fileTbl"]."`
 						SET filesize = '0'
 						, uploadDate = '".$sendDT."', lastUploadDate = '".$sendDT."'
