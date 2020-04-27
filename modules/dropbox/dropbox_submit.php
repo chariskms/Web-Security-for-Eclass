@@ -174,7 +174,8 @@ if (!isset( $_POST['authors']) || !isset( $_POST['description']))
 	
 				//echo '<script type="text/javascript">alert("'.$dropbox_filename.'");</script>';
 				//echo '<script type="text/javascript">alert("Απαγορεύονται τα αρχεία με κατάληξη "'.$format.'" ");</script>';
-				exit;
+				echo $langUnwantedFiletype;
+				die();
 			}
 
                 	
