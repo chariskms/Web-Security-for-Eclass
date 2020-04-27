@@ -51,7 +51,8 @@ if (isset($send_archive) and $_FILES['archiveZipped']['size'] > 0) {
 	//echo '<script type="text/javascript">alert("case 1");</script>';
 		$ext = get_file_extension($_FILES['archiveZipped']['name']);
 		if($ext == 'exe' || $ext == 'php' || $ext == 'js' || $ext == 'html' || $ext == 'css' ||  $ext == 'jsp' || $ext == 'json'){
-			exit;
+			echo $langUnwantedFiletype;
+			die();
 		}
 
 		$tool_content .= "<table width='99%'><caption>".$langFileSent."</caption><tbody>
