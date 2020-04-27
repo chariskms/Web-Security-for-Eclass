@@ -143,7 +143,7 @@ if (!isset($submit)) {
 			$registration_errors[] = $langUserFree;
 		}
 	}
-	
+
 	$email = htmlspecialchars($email, ENT_QUOTES);
 	$password = htmlspecialchars($password, ENT_QUOTES);
 	$password1 = htmlspecialchars($password1, ENT_QUOTES);
@@ -209,7 +209,28 @@ if (!isset($submit)) {
 	}
 
 
-
+	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
+	$ql= $pdodb->prepare("INSERT INTO user(user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)	
+	VALUES (? , ?, ?, ?, ?, ?,?,?,?,?,?,?)");	
+		
+	$nulvar = null;
+	$var5 = 5;
+	
+	$ql->bindParam(1, $nulvar);
+	$ql->bindParam(2, $nom_form);
+	$ql->bindParam(3, $prenom_form);
+	$ql->bindParam(4, $uname);
+	$ql->bindParam(5, $password_encrypted);
+	$ql->bindParam(6, $email);
+	$ql->bindParam(7, $var5);
+	$ql->bindParam(8, $department);
+	$ql->bindParam(9, $am);
+	$ql->bindParam(10, $registered_at);
+	$ql->bindParam(11, $expires_at);
+	$ql->bindParam(12, $lang);
+		
+	$inscr_user = $ql->execute();
+	$last_id = $pdodb->lastInsertId();
 
 	// $q1 = "INSERT INTO `$mysqlMainDb`.user
 	// (user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)
@@ -217,6 +238,20 @@ if (!isset($submit)) {
 	// 	'$department','$am',".$registered_at.",".$expires_at.",'$lang')";
 	// $inscr_user = mysql_query($q1);
 	// $last_id = mysql_insert_id();
+	//echo '<script type="text/javascript">alert("'.$last_id.'");</script>';
+
+	$ql= $pdodb->prepare("SELECT user_id, nom, prenom FROM user WHERE user_id=?");
+	$ql->bindParam(1, $last_id);
+	$ql->execute();
+	while ($myrow = $ql->fetch(PDO::FETCH_ASSOC)) {
+		$uid=$myrow['user_id'];
+		$nom=$myrow['nom'];
+		$prenom=$myrow['prenom'];
+	}
+	// echo '<script type="text/javascript">alert("'.$uid.'");</script>';
+	// echo '<script type="text/javascript">alert("'.$nom.'");</script>';
+	// echo '<script type="text/javascript">alert("'.$prenom.'");</script>';
+
 	// $result=mysql_query("SELECT user_id, nom, prenom FROM `$mysqlMainDb`.user WHERE user_id='$last_id'");
 	// while ($myrow = mysql_fetch_array($result)) {
 	// 	$uid=$myrow[0];
@@ -224,43 +259,6 @@ if (!isset($submit)) {
 	// 	$prenom=$myrow[2];
 	// }
 
-
-    //
-	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
-	$ql= $pdodb->prepare("INSERT INTO user(user_id, nom, prenom, username, password, email, statut, department, am, registered_at, expires_at, lang)	
-	VALUES (? , ?, ?, ?, ?, ?,?,?,?,?,?,?)");	
-	//VALUES (?, ?, '$prenom_form', '$uname', '$password_encrypted', '$email',?,
-	//'$department','$am',".$registered_at.",".$expires_at.",'$lang')");
-		//echo '<script type="text/javascript">alert("1");</script>';	
-		$nulvar = null;
-		$var5 = 5;
-	//bindValue(':user_id', $nulvar, PDO::PARAM_INT);	
-			$ql->bindParam(1, $nulvar);
-			$ql->bindParam(2, $nom_form);
-			$ql->bindParam(3, $prenom_form);
-			$ql->bindParam(4, $uname);
-			$ql->bindParam(5, $password_encrypted);
-		    $ql->bindParam(6, $email);
-			$ql->bindParam(7, $var5);
-			$ql->bindParam(8, $department);
-			$ql->bindParam(9, $am);
-			$ql->bindParam(10, $registered_at);
-			$ql->bindParam(11, $expires_at);
-			$ql->bindParam(12, $lang);
-		
-	$ql->execute();
-	$last_id = $pdodb->lastInsertId();
-	//$inscr_user = 10;
-
-	$ql= $pdodb->prepare("SELECT user_id, nom, prenom FROM user WHERE user_id=?");
-	$ql->bindParam(1, $last_id);
-	$ql->execute();
-	while ($myrow = $ql->fetch(PDO::FETCH_ASSOC)) {
-		$uid=$myrow[0];
-		$nom=$myrow[1];
-		$prenom=$myrow[2];
-	}
-	
 	$pdodb = new PDO("mysql:host=$mysqlServer;dbname=$mysqlMainDb",$mysqlUser, $mysqlPassword, array(PDO::MYSQL_ATTR_INIT_COMMAND => "SET NAMES utf8"));	
 
 	$sql = $pdodb->prepare("INSERT INTO loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
@@ -273,6 +271,7 @@ if (!isset($submit)) {
 
 	// mysql_query("INSERT INTO `$mysqlMainDb`.loginout (loginout.idLog, loginout.id_user, loginout.ip, loginout.when, loginout.action)
 	// VALUES ('', '".$uid."', '".$REMOTE_ADDR."', NOW(), 'LOGIN')");
+	
 	$_SESSION['uid'] = $uid;
 	$_SESSION['statut'] = 5;
 	$_SESSION['prenom'] = $prenom;
