@@ -284,7 +284,8 @@ if ($is_adminOfCourse){
 					include '../../include/lib/forcedownload.php';
 					$ext = get_file_extension($file_name);
 					if($ext != 'html'){
-						exit;
+						echo $langUnwantedFiletype;
+						die();
 					}
 
 					@copy("$file", "$updir/$file_name")
