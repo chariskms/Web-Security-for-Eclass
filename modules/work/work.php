@@ -373,7 +373,9 @@ function submit_work($id) {
 		//echo '<script type="text/javascript">alert("'.$_FILES['userfile']['name'].'");</script>';
 		//echo '<script type="text/javascript">alert("'.$filename.'");</script>';
 		//echo '<script type="text/javascript">alert("Απαγορεύονται τα αρχεία με κατάληξη "'.$format.'" ");</script>';
-		exit;
+		$tool_content .= "<p class=\"caution_small\">$langUnwantedFiletype<br />";
+		$tool_content .= "<a href=\"$_SERVER[PHP_SELF]?id=$id\">$langBack</a></p><br />";
+		return;
 	}
 	if (move_uploaded_file($_FILES['userfile']['tmp_name'], "$workPath/$filename")) {
 		$msg2 = "$langUploadSuccess";//to message
