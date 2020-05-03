@@ -24,42 +24,42 @@
 
 Πιο αναλυτικά, λόγω του μεγάλου πλήθους ερωτημάτων έπρεπε να επιλέξουμε ένα μέρος αυτών που θα μετατρέπαμε σε μορφή PDO ως τη πιο ασφαλή αλλαγή. Έτσι προτιμήσαμε σημεία άμεσα προσβάσιμα από τους χρήστες στα οποία υπήρχαν φόρμες που οδηγούσαν στην εκτέλεση ερωτημάτων UPDATE και INSERT INTO και αποτελούν μέσο για αλλαγές στην main βάση eclass.  
 
-Σε όσα ερωτήματα δεν χρησιμοποιήθηκε PDO, επιλέχθηκε η έτοιμη συνάρτηση escapeSimple που υπάρχει στην /include/lib/main.lib.php, η οποία παρόλο που δεν μας προστατεύει από όλες τις επιθέσεις καλύπτει ένα μεγάλο μέρος αυτών χρησιμοποιώντας τη συνάρτηση get_magic_quotes_gpc() για έλεγχο ειδικών χαρακτήρων και την mysql_real_escape_string() για escape. Η escapeSimple προσφέρει έναν αρκετά καλό συνδυασμό αποδοτικότητας και προστασίας σε σημεία που η χρήση της PDO ήταν ιδιαίτερα περίπλοκη (π.χ. μέσα σε συναρτήσεις). Προσπαθήσαμε να καλύψουμε με escapeSimple όλους τους φακέλους του /modules και ειδικότερα σε αρχεία που περιέχουν πολλά ερωτήματα SQL. 
+Σε όσα ερωτήματα δεν χρησιμοποιήθηκε **PDO**, επιλέχθηκε η έτοιμη συνάρτηση **escapeSimple** που υπάρχει στην /include/lib/main.lib.php, η οποία παρόλο που δεν μας προστατεύει από όλες τις επιθέσεις καλύπτει ένα μεγάλο μέρος αυτών χρησιμοποιώντας τη συνάρτηση get_magic_quotes_gpc() για έλεγχο ειδικών χαρακτήρων και την mysql_real_escape_string() για escape. Η escapeSimple προσφέρει έναν αρκετά καλό συνδυασμό αποδοτικότητας και προστασίας σε σημεία που η χρήση της PDO ήταν ιδιαίτερα περίπλοκη (π.χ. μέσα σε συναρτήσεις). Προσπαθήσαμε να καλύψουμε με escapeSimple όλους τους φακέλους του /modules και ειδικότερα σε αρχεία που περιέχουν πολλά ερωτήματα SQL. 
 
-Η τελευταία μέθοδος που χρησιμοποιήθηκε και συμπληρώνει τις προηγούμενες δύο είναι η χρήση της συνάρτησης intval(), για την προστασία IDs και την μετατροπή κάθε πιθανής εισόδου από τον χρήστη σε integer. 
+Η τελευταία μέθοδος που χρησιμοποιήθηκε και συμπληρώνει τις προηγούμενες δύο είναι η χρήση της συνάρτησης **intval()**, για την προστασία IDs και την μετατροπή κάθε πιθανής εισόδου από τον χρήστη σε integer. 
 
 
 **Στην συνέχεια ακολουθούν τα αρχεία που επεξεργαστήκαμε μαζί με την αντίστοιχη αλλαγή:**
 
 
 1)	/index.php
--	1 PDO για το login σε SELECT και escapeSimple τα υπόλοιπα SELECT
+-	1 **PDO** για το login σε SELECT και escapeSimple τα υπόλοιπα SELECT
 2)	/modules/work/work.php
--	2 PDOs σε INSERT INTO, escapeSimple σε UPDATE και INSERT INTO και escapeSimple, intval στα IDs
+-	2 **PDOs** σε INSERT INTO, escapeSimple σε UPDATE και INSERT INTO και escapeSimple, intval στα IDs
 3)	/modules/work/work_functions.php
 -	intval στα IDs σε όλες τις συναρτήσεις 
 4)	/modules/phpbb/editpost.php
--	1 PDO σε UPDATE, escapeSimple σε όλα τα υπόλοιπα ερωτήματα
+-	1 **PDO** σε UPDATE, escapeSimple σε όλα τα υπόλοιπα ερωτήματα
 5)	/modules/phpbb/functions.php
 -	escapeSimple σε όλα τα SELECT
 6)	/modules/phpbb/index.php
--	4 PDOs σε UPDATE, INSERT INTO και escapeSimple στα SELECT
+-	4 **PDOs** σε UPDATE, INSERT INTO και escapeSimple στα SELECT
 7)	/modules/phpbb/newtopic.php
--	6 PDOs σε SELECT, INSERT INTO, UPDATE και escapeSimple σε SELECT DISTINCT
+-	6 **PDOs** σε SELECT, INSERT INTO, UPDATE και escapeSimple σε SELECT DISTINCT
 8)	/modules/phpbb/reply.php
--	5 PDOs σε UPDATE, INSERT INTO, SELECT DISTINCT και escapeSimple σε SELECT
+-	5 **PDOs** σε UPDATE, INSERT INTO, SELECT DISTINCT και escapeSimple σε SELECT
 9)	/modules/phpbb/viewforum.php
--	2 PDOs σε INSERT INTO, UPDATE και escapeSimple στα SELECT
+-	2 **PDOs** σε INSERT INTO, UPDATE και escapeSimple στα SELECT
 10)	/modules/phpbb/viewtopic.php
--	1 PDO σε UPDATE και intval, escapeSimple στα SELECT
+-	1 **PDO** σε UPDATE και intval, escapeSimple στα SELECT
 11)	/modules/auth/newuser.php
--	3 PDOs στα INSERT INTO και SELECT
+-	3 **PDOs** στα INSERT INTO και SELECT
 12)	/modules/auth/newprof.php
--	1 PDO σε INSERT INTO
+-	1 **PDO** σε INSERT INTO
 13)	/modules/profile/password.php
--	3 PDOs σε SELECT και UPDATE
+-	3 **PDOs** σε SELECT και UPDATE
 14)	/modules/profile/profile.php
--	4 PDOs σε SELECT και UPDATE 
+-	4 **PDOs** σε SELECT και UPDATE 
 15)	/modules/dropbox/dropbox_class.inc.php
 -	escapeSimple στα INSERT INTO, SELECTS, UPDATES, DELETES
 16)	/modules/dropbox/dropbox_init1.inc.php
@@ -69,7 +69,7 @@
 18)	/modules/dropbox/index.php
 -	escapeSimple στα SELECT DISTINCT
 19)	/modules/conference/messageList.php
--	1 PDO στο INSERT INTO	
+-	1 **PDO** στο INSERT INTO	
 20)	/modules/unreguser/unregcours.php
 -	escapeSimple στα ids	
 21)	/modules/unreguser/unreguser.php
@@ -126,7 +126,7 @@
 ### 1.	Reflected XSS
 Τα Reflected XSS πραγματοποιούνται όταν ο αντίπαλος καταφέρνει να περάσει κώδικα που θα αποσταλλεί μέσω HTTP request (e.g. GET requests) και είτε να εμφανίσει κάποια σελίδα στην οποία ο χρήστης δε θα έπρεπε να έχει πρόσβαση ή να τρέξει κάποιο εκτελέσιμο. Οι τροποποιήσεις μας ανάγονται στη μετατροπή οποιουδήποτε input από το χρήστη σε μορφή αποδεκτή από το σύστημα. 
 
-Έτσι όλα τα inputs σε URL μετατράπηκαν σε ειδικά μορφοποιημένο text με τη χρήση της htmlspecialchars($urlInput, ENT_QUOTES ) προκειμένου ειδικοί χαρακτήρες όπως τα <, >, ‘, “, κλπ. να μετατρέπονται στην text μορφή τους και να μην επηρεάζουν εντολές του κώδικα. 
+Έτσι όλα τα inputs σε URL μετατράπηκαν σε ειδικά μορφοποιημένο text με τη χρήση της **htmlspecialchars($urlInput, ENT_QUOTES )** προκειμένου ειδικοί χαρακτήρες όπως τα <, >, ‘, “, κλπ. να μετατρέπονται στην text μορφή τους και να μην επηρεάζουν εντολές του κώδικα. 
 
 **Οι αντίστοιχες αλλαγές είναι οι ακόλουθες:**
 
@@ -145,7 +145,7 @@
 ### 2.	Stored XSS
 Στα Stored XSS attacks, η πρακτική που ακολουθούν οι αντίπαλοι είναι η απόπειρα αποθήκευσης εκτελέσιμου κώδικα (HTML ή JavaScript) στη βάση δεδομένων. Με τον τρόπο αυτό, κατά την επόμενη επίσκεψη του χρήστη στην εν λόγω HTML σελίδα, ο κώδικας του επιτιθέμενου εκτελείται. 
 
-Η προστασία από XSS έγκειται στην “αδρανοποίηση” οποιουδήποτε input το site δέχεται από το χρήστη. Αυτά περιλαμβάνουν φόρμες, chat boxes, σώμα μηνυμάτων, κλπ.  Αυτά τα inputs περνάνε από επεξεργασία με τη χρήση της htmlspecialchars($urlInput, ENT_QUOTES) για κάθε πεδίο. Στις περιπτώσεις που χρησιμοποιούνται και για SQL ερωτήματα, θωρακίζονται επιπλέον με τη χρήση autoquote και escapeSimple (βλ. SQL INJECTIONS).
+Η προστασία από XSS έγκειται στην “αδρανοποίηση” οποιουδήποτε input το site δέχεται από το χρήστη. Αυτά περιλαμβάνουν φόρμες, chat boxes, σώμα μηνυμάτων, κλπ.  Αυτά τα inputs περνάνε από επεξεργασία με τη χρήση της **htmlspecialchars($urlInput, ENT_QUOTES)** για κάθε πεδίο. Στις περιπτώσεις που χρησιμοποιούνται και για SQL ερωτήματα, θωρακίζονται επιπλέον με τη χρήση **autoquote και escapeSimple** (βλ. SQL INJECTIONS).
 
 **Τα αρχεία που προστατεύθηκαν από Stored XSS είναι τα ακόλουθα:**
 
@@ -186,7 +186,7 @@
 34)	/modules/work/work.php: φόρμα δημιουργίας, επεξεργασίας, υποβολής εργασίας
 
 ### 1.3	Cross – Site Request Forgery (CSRF)
-Το CSRF είναι μίας μορφής επίθεση που εστιάζει στην υποκλοπή του cookie του χρήστη μέσω εξωτερικής σελίδας και τον ωθεί να εκτελέσει ενέργειες στο κακόβουλο site που έχουν αντίκτυπο στο site που είναι logged in. Για την προστασία από τέτοιου είδους επιθέσεις χρησιμοποιούνται κρυφά tokens τα οποία αποκτούν μία τιμή που παράγεται τυχαία. Στην συνέχεια αυτά τα tokens εισάγονται τόσο στο session του χρήστη όσο και στις περισσότερες από τις φόρμες που υπάρχουν στο site και, όταν γίνεται submit σε κάθε μία από αυτές, ελέγχεται αν το token που συνοδεύει τη φόρμα είναι ίδιο με αυτό που έχει ο χρήστης στο session του. 
+Το CSRF είναι μίας μορφής επίθεση που εστιάζει στην υποκλοπή του cookie του χρήστη μέσω εξωτερικής σελίδας και τον ωθεί να εκτελέσει ενέργειες στο κακόβουλο site που έχουν αντίκτυπο στο site που είναι logged in. Για την προστασία από τέτοιου είδους επιθέσεις χρησιμοποιούνται κρυφά **tokens** τα οποία αποκτούν μία τιμή που παράγεται τυχαία. Στην συνέχεια αυτά τα tokens εισάγονται τόσο στο session του χρήστη όσο και στις περισσότερες από τις φόρμες που υπάρχουν στο site και, όταν γίνεται submit σε κάθε μία από αυτές, ελέγχεται αν το token που συνοδεύει τη φόρμα είναι ίδιο με αυτό που έχει ο χρήστης στο session του. 
 
 **Στην συνέχεια ακολουθούν τα αρχεία που επεξεργαστήκαμε μαζί με την αντίστοιχη αλλαγή:**
 
@@ -252,7 +252,7 @@
 
 ### 1.4	Remote File Injection (RFI)
 Η προστασία από RFI βασίζεται στην δυνατότητα ενσωμάτωσης αρχείων από εξωτερικούς χρήστες, με χαρακτηριστικά παραδείγματα το include/require από user defined πεδία και το upload αρχείων που δύνανται να εκτελεστούν να αποτελούν τις μεγαλύτερες απειλές για ένα site. 
-Όσον αφορά τα include/require, στα σημεία που αυτό κρίθηκε απαραίτητο, δημιουργήθηκε μια whitelist προκειμένου ο αντίπαλος να μην μπορεί να συμπεριλάβει κάτι που δεν επιτρέπεται. Αντίστοιχα, για το upload αρχείων που απαιτεί το σύστημα, φιλτράρονται οι επιτρεπτοί τύποι αρχείων, προτρέποντας έτσι το χρήστη  να ανεβάζει μόνο μη εκτελέσιμα αρχεία και αλλάζουμε τυχαία τα ονόματα των αρχείων ώστε να μην είναι εύκολα αναγνωρίσιμα.
+Όσον αφορά τα **include/require**, στα σημεία που αυτό κρίθηκε απαραίτητο, δημιουργήθηκε μια **whitelist** προκειμένου ο αντίπαλος να μην μπορεί να συμπεριλάβει κάτι που δεν επιτρέπεται. Αντίστοιχα, για το **upload** αρχείων που απαιτεί το σύστημα, φιλτράρονται οι επιτρεπτοί τύποι αρχείων, προτρέποντας έτσι το χρήστη  να ανεβάζει μόνο μη εκτελέσιμα αρχεία και αλλάζουμε τυχαία τα ονόματα των αρχείων ώστε να μην είναι εύκολα αναγνωρίσιμα.
 
 **Τα αρχεία που περιγράφονται είναι τα:**
 
@@ -265,21 +265,21 @@
 4)	/modules/help/help.php
 -	whitelist γλωσσών
 5)	/modules/work/work.php
--	$local_name = md5(md5($local_name)); <br>
-	return σε αρχεία exe php js html css jsp json
+-	**$local_name = md5(md5($local_name))**; <br>
+	**return σε αρχεία exe php js html css jsp json*8
 6)	/modules/work/work_functions.php
--	στην συνάρτηση work_secret αλλάζουμε το path από $id σε md5(md5($id)) 
+-	**στην συνάρτηση work_secret αλλάζουμε το path από $id σε md5(md5($id))** 
 7)	/modules/dropbox/dropbox_submit.php
--	die σε αρχεία exe php js html css jsp json
+-	**die σε αρχεία exe php js html css jsp json**
 8)	/include/lib/main.lib.php
--	στην safe_filename περάσαμε το τυχαίο κλειδί σε md5 για να αυξηθεί το μέγεθος του
+-	**στην safe_filename περάσαμε το τυχαίο κλειδί σε md5 για να αυξηθεί το μέγεθος του**
 9)	/modules/course_info/infocours.php
 -	whitelist γλωσσών
 10)	/modules/course_info/restore_course.php
 -	whitelist γλωσσών <br> 
-	die σε αρχεία exe php js html css jsp json
+	**die σε αρχεία exe php js html css jsp json**
 11)	/modules/course_tools/course_tools.php
--	die όλα τα αρχεία εκτός από html
+-	**die όλα τα αρχεία εκτός από html**
 12)	/modules/phpbb/functions.php
 -	whitelist γλωσσών
 13)	/upgrade/upgrade.php
