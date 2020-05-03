@@ -265,7 +265,7 @@
 4)	/modules/help/help.php
 -	whitelist γλωσσών
 5)	/modules/work/work.php
--	$local_name = md5(md5($local_name)); 
+-	$local_name = md5(md5($local_name)); <br>
 	return σε αρχεία exe php js html css jsp json
 6)	/modules/work/work_functions.php
 -	στην συνάρτηση work_secret αλλάζουμε το path από $id σε md5(md5($id)) 
@@ -276,7 +276,8 @@
 9)	/modules/course_info/infocours.php
 -	whitelist γλωσσών
 10)	/modules/course_info/restore_course.php
--	whitelist γλωσσών, die σε αρχεία exe php js html css jsp json
+-	whitelist γλωσσών <br> 
+	die σε αρχεία exe php js html css jsp json
 11)	/modules/course_tools/course_tools.php
 -	die όλα τα αρχεία εκτός από html
 12)	/modules/phpbb/functions.php
